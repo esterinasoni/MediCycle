@@ -1,0 +1,6 @@
+patient_id,full_name,phone_number,primary_address,home_region,caregiver_name,caregiver_phone
+P101,Kwame Owino,+254710000001,Westlands Estate,Nairobi,Jane Wambui,+254790000001
+P102,Wanjiku Kamau,+254710000002,Kikuyu Estate,Kiambu,Peter Omondi,+254790000002
+P103,Musa Otieno,+254710000003,Thika Road Estate,Nairobi,Sarah Cherono,+254790000003
+P104,Achieng Anyango,+254710000004,South C Estate,Nairobi,Hassan Ali,+254790000004
+P105,Fatuma Juma,+254710000005,Kilimani Estate,Nairobi,Grace Nyambura,+254790000005

@@ -1,0 +1,4 @@
+pharmacy_id,pharmacy_name,region,stock_status
+PH01,Halisi Pharma - Westlands,Nairobi,True
+PH02,Boma Chemist - Kikuyu,Kiambu,True
+PH03,Afya Bora - Thika Road,Nairobi,False

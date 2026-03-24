@@ -1,0 +1,7 @@
+prescription_id,patient_id,medication_name,daily_frequency,total_qty_dispensed,pills_remaining,is_verified,issue_date,validity_months,primary_pharmacy_id,document_url
+RX001,P101,Amlodipine,1,30,20,True,2026-03-06,6,PH01,kwame_amlodipine.png
+RX002,P101,Metformin,2,60,8,True,2026-03-01,6,PH03,kwame_metformin.png
+RX003,P102,Atorvastatin,1,30,5,True,2026-02-19,3,PH02,wanjiku_atorvastatin.png
+RX004,P103,Ventolin,1,30,10,True,2025-08-18,6,PH01,musa_ventolin.png
+RX005,P104,Insulin,2,60,40,False,2026-03-06,6,PH01,
+RX006,P105,Losartan,1,30,0,True,2026-02-14,4,PH01,fatuma_losartan.png

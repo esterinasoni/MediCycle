@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MediCycle — Payments</title>
+  <!-- Interswitch Encrypt SDK -->
+  <script src="https://newwebpay.interswitchng.com/inline-checkout.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -199,39 +201,57 @@
     }
 
     async function saveCard() {
-      const error = document.getElementById('cardError');
-      const success = document.getElementById('cardSuccess');
-      error.style.display = 'none'; success.style.display = 'none';
+    const error = document.getElementById('cardError');
+    const success = document.getElementById('cardSuccess');
+    error.textContent = '';
+    success.textContent = '';
 
-      const cardNumber = document.getElementById('cardNumber')?.value.replace(/\s/g, '');
-      if (!cardNumber || cardNumber.length < 16) {
+    const cardNumber = document.getElementById('cardNumber')?.value.replace(/\s/g, '');
+    const expiry = document.getElementById('cardExpiry')?.value.trim();
+    const cvv = document.getElementById('cardCvv')?.value.trim();
+    const cardName = document.getElementById('cardName')?.value.trim();
+
+    if (!cardNumber || cardNumber.length < 16) {
         error.textContent = 'Please enter a valid 16-digit card number.';
-        error.style.display = 'block'; return;
-      }
+        return;
+    }
 
-      const btn = document.getElementById('saveCardBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span>Saving securely...';
+    const btn = document.getElementById('saveCardBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Saving...';
 
-      try {
-        const res = await fetch(`${API}/payments/save-card?token=${token}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auth_data: `card_${cardNumber}` })
+    try {
+        // ✅ Encrypt card data using Interswitch SDK
+        const [month, year] = expiry.split('/');
+        const authData = ISWEncrypt({
+            pan: cardNumber,
+            expiryDate: `20${year}${month}`,  // format: YYYYMM
+            cvv2: cvv,
+            pin: '',                            // empty for tokenization
+            publicKey: 'MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMEu43ST7aPLtaS3gOBVTtODAhUAGYqV\n' +
+                       'AkWfMDkBEMomJBOQLWVKM9bN3oXgKuZGbWQPh7l7Xjls1pXlx9UCAwEAAQ=='
         });
+
+        const res = await fetch(`${API}/payments/save-card?token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auth_data: authData })
+        });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Failed to save card');
-        success.textContent = `✅ ${data.message} Mode: ${data.mode}`;
-        success.style.display = 'block';
+
         const masked = data.card_masked || `**** **** **** ${cardNumber.slice(-4)}`;
         showSavedCard(masked);
-      } catch(err) {
+        success.textContent = 'Card saved successfully!';
+
+    } catch (err) {
         error.textContent = err.message;
-        error.style.display = 'block';
+    } finally {
         btn.disabled = false;
         btn.innerHTML = '🔒 Save Card Securely';
-      }
     }
+}
 
     async function loadTransactions() {
       try {

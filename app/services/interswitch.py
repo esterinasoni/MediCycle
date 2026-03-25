@@ -167,6 +167,7 @@ def charge_patient(
                 "amount": str(amount_kobo),
                 "currency": "NGN",
                 "token": token,
+                "transactionRef": ref, 
                 "tokenExpiryDate": token_expiry,
                 "transferRef": ref,
                 "requestRef": ref,

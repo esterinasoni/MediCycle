@@ -4,7 +4,6 @@
 
 **MediCycle** is a data-driven medication management platform designed to eliminate **“Refill Gaps”** for patients living with chronic conditions. By combining clinical logic, automated notifications, and seamless payments, we ensure patients never run out of life-saving medication.
 
----
 
 ##  The Problem
 
@@ -21,7 +20,6 @@ This results in dangerous **refill gaps**, leading to:
 * Health deterioration
 * Preventable hospital visits
 
----
 
 ##  Our Solution
 
@@ -42,7 +40,6 @@ MediCycle acts as a **Clinical Refill Intelligence System** that proactively man
 * **Pharmacy Routing & Delivery**
   Automatically routes orders to available pharmacies and triggers delivery.
 
----
 
 ##  How It Works (System Flow)
 
@@ -58,7 +55,6 @@ MediCycle acts as a **Clinical Refill Intelligence System** that proactively man
 6. System routes order to nearest pharmacy
 7. Delivery is triggered and tracked
 
----
 
 ##  Communication System (Core Feature)
 
@@ -75,8 +71,6 @@ MediCycle uses a **trigger-based notification engine**:
 
  Full scripts available in `/communications/notifications.md`
 
----
-
 ##  MVP Scope (Buildathon Focus)
 
 For the MVP, we are prioritizing:
@@ -87,7 +81,6 @@ For the MVP, we are prioritizing:
 * Payment integration (Interswitch)
 * Basic pharmacy routing (mock data)
 
----
 
 ##  Tech Stack (Planning Phase)
 
@@ -96,8 +89,6 @@ For the MVP, we are prioritizing:
 * **Database:** PostgreSQL
 * **Payments:** Interswitch Webpay / Recurring API
 * **Automation (optional):** n8n workflows
-
----
 
 ##  User Personas
 
@@ -136,7 +127,6 @@ For the MVP, we are prioritizing:
 * Challenge: Inconsistent adherence
 * Needs: Smart reminders + tracking
 
----
 
 ## Product Differentiator
 
@@ -158,7 +148,6 @@ This feature directly addresses high-risk scenarios for:
 * **Maureen Cheptoo** – Product Manager & UX Strategy
 * **Phylis** – Software Developer / Cybersecurity
 
----
 
 ## Current Status
 
@@ -169,4 +158,3 @@ We are currently in the **MVP Build Phase**, focusing on:
 * Integrating payment workflows
 * Designing caregiver escalation system
 
----

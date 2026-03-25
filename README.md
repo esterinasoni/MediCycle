@@ -2,62 +2,171 @@
 
 ### Enyata × Interswitch Buildathon 2026 - Health Track
 
-**MediCycle** is a data driven medication management platform designed to eliminate "Refill Gaps" for chronic patients. By combining clinical data engineering with automated payment infrastructure, we ensure patients never run out of life saving medication.
+**MediCycle** is a data-driven medication management platform designed to eliminate **“Refill Gaps”** for patients living with chronic conditions. By combining clinical logic, automated notifications, and seamless payments, we ensure patients never run out of life-saving medication.
 
-## The Problem
-Patients with chronic illnesses often forget to refill prescriptions or face logistical hurdles in visiting pharmacies. This leads to missed doses and worsened health outcomes.
+---
 
-## Our Solution
-* **Smart Tracking:** Calculates medication depletion rates based on clinical dosage.
-* **Automated Reminders:** Notifies users 5 days before they run out.
-* **Seamless Payments:** Integrated with **Interswitch APIs** for easy, secure refills.
-* **Reliable Delivery:** Triggers pharmacy delivery once payment is confirmed.
+##  The Problem
+
+Patients with chronic illnesses (e.g. hypertension, diabetes, asthma) often:
+
+* Forget to refill prescriptions on time
+* Lack visibility into remaining medication
+* Face logistical barriers accessing pharmacies
+* Depend on manual tracking or caregivers
+
+This results in dangerous **refill gaps**, leading to:
+
+* Missed doses
+* Health deterioration
+* Preventable hospital visits
+
+---
+
+##  Our Solution
+
+MediCycle acts as a **Clinical Refill Intelligence System** that proactively manages medication cycles:
+
+* **Smart Tracking Engine**
+  Calculates medication depletion based on dosage and frequency.
+
+* **Predictive Notifications**
+  Alerts patients before medication runs out.
+
+* **Emergency Safety Net (Caregiver Escalation)** 
+  Notifies caregivers when medication reaches zero — enabling immediate intervention.
+
+* **Seamless Payments**
+  Integrated with **Interswitch APIs** for one-click refill payments.
+
+* **Pharmacy Routing & Delivery**
+  Automatically routes orders to available pharmacies and triggers delivery.
+
+---
+
+##  How It Works (System Flow)
+
+1. Patient uploads prescription
+2. System validates and stores medication data
+3. Daily engine calculates **Days Left**
+4. Notifications triggered based on thresholds:
+
+   * 5 days → Reminder
+   * 2 days → Urgent alert
+   * 0 days → **Emergency caregiver escalation**
+5. User (or caregiver) completes payment
+6. System routes order to nearest pharmacy
+7. Delivery is triggered and tracked
+
+---
+
+##  Communication System (Core Feature)
+
+MediCycle uses a **trigger-based notification engine**:
+
+| Scenario                | Trigger                | Action                   |
+| ----------------------- | ---------------------- | ------------------------ |
+| Verification Failed     | `is_verified == False` | Prompt user to re-upload |
+| Refill Reminder         | `days_left ≤ 5`        | Notify patient           |
+| Urgent Alert            | `days_left ≤ 2`        | Send critical message    |
+| Stock Failover          | `primary_OOS == True`  | Reroute pharmacy         |
+| Expired Prescription    | `today > expiry_date`  | Block refill             |
+|  Emergency Escalation | `pills_remaining == 0` | Alert caregiver          |
+
+ Full scripts available in `/communications/notifications.md`
+
+---
+
+##  MVP Scope (Buildathon Focus)
+
+For the MVP, we are prioritizing:
+
+* Refill tracking engine
+* Notification system (multi-stage alerts)
+* Emergency caregiver escalation (**core differentiator**)
+* Payment integration (Interswitch)
+* Basic pharmacy routing (mock data)
+
+---
 
 ##  Tech Stack (Planning Phase)
-* **Frontend:** Streamlit (Python - based UI)
+
+* **Frontend:** Streamlit (Python-based UI)
 * **Backend:** FastAPI
 * **Database:** PostgreSQL
 * **Payments:** Interswitch Webpay / Recurring API
+* **Automation (optional):** n8n workflows
 
-## User Personas
+---
+
+##  User Personas
 
 ### 1. Mary Wanjiku (Elderly Patient)
 
 * Age: 68
 * Condition: Hypertension
-* Challenge: Forgets to refill medication on time
-* Needs: Simple reminders and caregiver support
+* Challenge: Forgets to refill medication
+* Needs: Simple reminders + caregiver support
 
 ### 2. James Otieno (Busy Professional)
 
 * Age: 35
 * Condition: Diabetes
-* Challenge: Busy schedule, forgets refills
-* Needs: Automated reminders and quick payment
+* Challenge: Busy schedule
+* Needs: Automated reminders + quick payment
 
 ### 3. Amina Hassan (Remote Area Resident)
 
 * Age: 42
 * Condition: Asthma
-* Challenge: Limited access to pharmacies
-* Needs: Delivery and pharmacy routing
+* Challenge: Limited pharmacy access
+* Needs: Delivery + routing
 
 ### 4. Brian Mwangi (Caregiver)
 
 * Age: 30
-* Role: مراقب for elderly parent
-* Challenge: Needs visibility into patient medication
-* Needs: Emergency alerts and refill control
+* Role: Caregiver for elderly parent
+* Challenge: No visibility into medication status
+* Needs: Emergency alerts + refill control
 
 ### 5. Sarah Chebet (Young Adult Patient)
 
 * Age: 27
 * Condition: Chronic condition
-* Challenge: Inconsistent medication adherence
-* Needs: Smart reminders and easy tracking
+* Challenge: Inconsistent adherence
+* Needs: Smart reminders + tracking
+
+---
+
+## Product Differentiator
+
+Unlike traditional pharmacy apps, MediCycle introduces a **Caregiver Safety Net**:
+
+> When a patient runs out of medication, the system escalates the situation to a caregiver — ensuring no patient is left without support.
+
+This feature directly addresses high-risk scenarios for:
+
+* Elderly patients
+* Chronically ill individuals
+* Patients in remote areas
+
 
 ##  Team: MediCycle
-* **Esterina:** Team Lead & Data Scientist
-* **Winfred:** Data Scientist 
-* **Maureen:** Product Manager
-* **Phylis:** Software Developer / Cybersecurity
+
+* **Esterina** – Team Lead & Data Scientist
+* **Winfred** – Data Scientist
+* **Maureen Cheptoo** – Product Manager & UX Strategy
+* **Phylis** – Software Developer / Cybersecurity
+
+---
+
+## Current Status
+
+We are currently in the **MVP Build Phase**, focusing on:
+
+* Implementing notification logic
+* Building refill tracking engine
+* Integrating payment workflows
+* Designing caregiver escalation system
+
+---

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCycle — Track Delivery</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef;
+      --cream: #faf8f3; --ink: #111a14; --mid: #4a6155;
+      --accent: #f4a935; --red: #e84545; --sidebar: #0a4a32;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+
+    .logo { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 700; color: var(--green); text-decoration: none; margin-bottom: 2rem; display: block; text-align: center; }
+    .logo span { color: var(--accent); }
+
+    .card { background: white; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 520px; width: 100%; overflow: hidden; }
+
+    /* HEADER */
+    .card-header { background: linear-gradient(135deg, var(--sidebar), var(--green)); padding: 2rem; color: white; }
+    .card-header h1 { font-family: 'Fraunces', serif; font-size: 1.4rem; margin-bottom: 0.3rem; }
+    .card-header p { opacity: 0.8; font-size: 0.88rem; }
+    .order-ref { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.78rem; margin-top: 0.75rem; letter-spacing: 0.04em; }
+
+    /* LOADING */
+    .loading-state { padding: 3rem 2rem; text-align: center; color: var(--mid); }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--green-pale); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MED INFO */
+    .med-info { padding: 1.5rem 2rem; border-bottom: 1px solid #f0f5f2; display: flex; align-items: center; gap: 1rem; }
+    .med-icon { width: 52px; height: 52px; background: var(--green-pale); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
+    .med-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
+    .med-sub { font-size: 0.82rem; color: var(--mid); }
+    .med-amount { margin-left: auto; text-align: right; }
+    .med-amount .amount { font-weight: 700; font-size: 1rem; color: var(--green); }
+    .med-amount .label { font-size: 0.72rem; color: var(--mid); }
+
+    /* TRACKER */
+    .tracker { padding: 2rem; border-bottom: 1px solid #f0f5f2; }
+    .tracker-title { font-size: 0.78rem; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1.5rem; }
+
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step { display: flex; align-items: flex-start; gap: 1rem; position: relative; }
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 19px;
+      top: 40px;
+      width: 2px;
+      height: calc(100% + 0px);
+      background: #e0e8e4;
+    }
+    .step:not(:last-child).done::after { background: var(--green); }
+    .step:not(:last-child).active::after { background: linear-gradient(to bottom, var(--green), #e0e8e4); }
+
+    .step-dot {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0; z-index: 1;
+      background: #f0f5f2; color: #b0bdb8;
+      border: 2px solid #e0e8e4;
+      transition: all 0.3s;
+    }
+    .step.done .step-dot { background: var(--green); color: white; border-color: var(--green); }
+    .step.active .step-dot { background: white; color: var(--green); border-color: var(--green); box-shadow: 0 0 0 4px rgba(14,110,74,0.12); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(14,110,74,0.12); } 50% { box-shadow: 0 0 0 8px rgba(14,110,74,0.06); } }
+
+    .step-content { padding: 0.5rem 0 2rem; }
+    .step-label { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.2rem; }
+    .step.done .step-label { color: var(--green); }
+    .step.active .step-label { color: var(--ink); }
+    .step.pending .step-label { color: #b0bdb8; }
+    .step-desc { font-size: 0.82rem; color: var(--mid); line-height: 1.5; }
+    .step-time { font-size: 0.75rem; color: var(--green); font-weight: 600; margin-top: 0.3rem; }
+
+    /* PHARMACY INFO */
+    .pharmacy-info { padding: 1.5rem 2rem; border-bottom: 1px solid #f0f5f2; }
+    .pharmacy-title { font-size: 0.78rem; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .pharmacy-card { background: var(--cream); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; }
+    .pharmacy-icon { font-size: 1.5rem; }
+    .pharmacy-name { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.2rem; }
+    .pharmacy-addr { font-size: 0.8rem; color: var(--mid); }
+
+    /* DELIVERED STATE */
+    .delivered-banner { background: var(--green); color: white; padding: 1.5rem 2rem; text-align: center; }
+    .delivered-banner .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .delivered-banner h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; margin-bottom: 0.3rem; }
+    .delivered-banner p { opacity: 0.85; font-size: 0.88rem; }
+
+    /* ACTIONS */
+    .actions { padding: 1.5rem 2rem; display: flex; gap: 1rem; }
+    .btn { flex: 1; padding: 0.75rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; border: none; }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-primary:hover { background: var(--green-light); }
+    .btn-outline { background: white; color: var(--green); border: 1.5px solid var(--green); }
+    .btn-outline:hover { background: var(--green-pale); }
+
+    /* NOT FOUND */
+    .not-found { padding: 3rem 2rem; text-align: center; }
+    .not-found h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; margin-bottom: 0.75rem; }
+    .not-found p { color: var(--mid); font-size: 0.9rem; }
+
+    .footer-note { text-align: center; font-size: 0.78rem; color: var(--mid); margin-top: 1.5rem; }
+    .footer-note a { color: var(--green); text-decoration: none; }
+
+    /* DEMO CONTROLS */
+    .demo-controls { background: #fff9e6; border: 1px solid #ffe082; border-radius: 12px; padding: 1rem 1.25rem; margin: 1rem 2rem; }
+    .demo-controls p { font-size: 0.78rem; color: #7a5c00; font-weight: 600; margin-bottom: 0.75rem; }
+    .demo-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .demo-btn { padding: 0.4rem 0.9rem; border-radius: 20px; border: 1px solid #ffe082; background: white; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; color: #7a5c00; transition: background 0.2s; }
+    .demo-btn:hover { background: #fff0cc; }
+    .demo-btn.active-btn { background: var(--accent); color: white; border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="logo">Medi<span>Cycle</span></a>
+
+  <div class="card">
+
+    <!-- LOADING -->
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <p>Loading delivery status...</p>
+    </div>
+
+    <!-- NOT FOUND -->
+    <div id="notFoundState" style="display:none;">
+      <div class="not-found">
+        <div style="font-size:3rem;margin-bottom:1rem;">📦</div>
+        <h2>Order Not Found</h2>
+        <p>This tracking link is invalid or expired. Please check your SMS for the correct link.</p>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="mainContent" style="display:none;">
+
+      <!-- HEADER -->
+      <div class="card-header">
+        <h1>📦 Delivery Tracking</h1>
+        <p>Real-time status of your medication order</p>
+        <span class="order-ref" id="orderRef">Order #—</span>
+      </div>
+
+      <!-- MED INFO -->
+      <div class="med-info">
+        <div class="med-icon">💊</div>
+        <div>
+          <div class="med-name" id="medName">—</div>
+          <div class="med-sub" id="medSub">—</div>
+        </div>
+        <div class="med-amount">
+          <div class="amount" id="medAmount">—</div>
+          <div class="label">Amount paid</div>
+        </div>
+      </div>
+
+      <!-- DEMO CONTROLS -->
+      <div class="demo-controls">
+        <p>🧪 Demo Mode — Simulate delivery stages:</p>
+        <div class="demo-btns">
+          <button class="demo-btn" onclick="setStage('preparing')" id="btnPreparing">📦 Preparing</button>
+          <button class="demo-btn" onclick="setStage('out_for_delivery')" id="btnOut">🚚 Out for Delivery</button>
+          <button class="demo-btn" onclick="setStage('delivered')" id="btnDelivered">✅ Delivered</button>
+        </div>
+      </div>
+
+      <!-- TRACKER -->
+      <div class="tracker">
+        <div class="tracker-title">Delivery Progress</div>
+        <div class="steps">
+
+          <div class="step done" id="stepPaid">
+            <div class="step-dot">✅</div>
+            <div class="step-content">
+              <div class="step-label">Payment Confirmed</div>
+              <div class="step-desc">Your payment was processed successfully via Interswitch.</div>
+              <div class="step-time" id="timePaid">Just now</div>
+            </div>
+          </div>
+
+          <div class="step" id="stepPreparing">
+            <div class="step-dot">📦</div>
+            <div class="step-content">
+              <div class="step-label">Order Being Prepared</div>
+              <div class="step-desc" id="descPreparing">The pharmacy is picking and packaging your medication.</div>
+              <div class="step-time" id="timePreparing" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="step pending" id="stepOut">
+            <div class="step-dot">🚚</div>
+            <div class="step-content">
+              <div class="step-label">Out for Delivery</div>
+              <div class="step-desc">Your medication is on its way to your delivery address.</div>
+              <div class="step-time" id="timeOut" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="step pending" id="stepDelivered">
+            <div class="step-dot">🏠</div>
+            <div class="step-content">
+              <div class="step-label">Delivered</div>
+              <div class="step-desc">Medication delivered to your address. Take care! 💚</div>
+              <div class="step-time" id="timeDelivered" style="display:none;"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PHARMACY -->
+      <div class="pharmacy-info" id="pharmacySection">
+        <div class="pharmacy-title">Fulfilling Pharmacy</div>
+        <div class="pharmacy-card">
+          <div class="pharmacy-icon">🏥</div>
+          <div>
+            <div class="pharmacy-name" id="pharmacyName">Locating nearest pharmacy...</div>
+            <div class="pharmacy-addr" id="pharmacyAddr">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELIVERED BANNER (hidden until delivered) -->
+      <div class="delivered-banner" id="deliveredBanner" style="display:none;">
+        <div class="icon">🎉</div>
+        <h2>Delivered Successfully!</h2>
+        <p>Your 30-day supply has been delivered. Your prescription cycle has been reset.</p>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="actions">
+        <a href="dashboard.html" class="btn btn-outline">← Dashboard</a>
+        <a href="payment.html" class="btn btn-primary">View Payments</a>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Need help? <a href="mailto:support@medicycle.app">support@medicycle.app</a> · <a href="index.html">MediCycle Home</a>
+  </p>
+
+  <script>
+    const API = 'http://127.0.0.1:8000';
+    const params = new URLSearchParams(window.location.search);
+    const transactionId = params.get('id');
+    const token = localStorage.getItem('mc_token');
+
+    let currentStage = 'preparing';
+    let transactionData = null;
+
+    const STAGES = ['preparing', 'out_for_delivery', 'delivered'];
+
+    async function loadTracking() {
+      // If no transaction ID, show demo mode with mock data
+      if (!transactionId) {
+        showMockData('preparing');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/payments/history?token=${token}`);
+        const data = await res.json();
+
+        if (!data.transactions || data.transactions.length === 0) {
+          showMockData('preparing');
+          return;
+        }
+
+        // Find the transaction
+        const tx = data.transactions.find(t => t.id === parseInt(transactionId))
+                 || data.transactions[0]; // fallback to latest
+
+        if (!tx) {
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('notFoundState').style.display = 'block';
+          return;
+        }
+
+        transactionData = tx;
+        renderTracking(tx);
+
+      } catch(e) {
+        // Fallback to demo mode
+        showMockData('preparing');
+      }
+    }
+
+    function showMockData(stage) {
+      const mockTx = {
+        id: transactionId || 'DEMO',
+        prescription_id: 1,
+        amount: 80000,
+        status: 'success',
+        delivery_status: stage,
+        created_at: new Date().toISOString()
+      };
+      renderTracking(mockTx);
+    }
+
+    function renderTracking(tx) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+
+      document.getElementById('orderRef').textContent = `Order #${tx.id}`;
+      document.getElementById('medName').textContent = `Prescription #${tx.prescription_id}`;
+      document.getElementById('medSub').textContent = '30-day supply · Auto-refill';
+      document.getElementById('medAmount').textContent = `₦${(tx.amount / 100).toLocaleString()}`;
+
+      const paidTime = new Date(tx.created_at);
+      document.getElementById('timePaid').textContent =
+        paidTime.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+      updateStage(tx.delivery_status || 'preparing');
+    }
+
+    function updateStage(stage) {
+      currentStage = stage;
+
+      // Reset all steps
+      ['stepPreparing', 'stepOut', 'stepDelivered'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'step pending';
+      });
+
+      const now = new Date().toLocaleString('en-GB', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      });
+
+      if (stage === 'preparing' || stage === 'out_for_delivery' || stage === 'delivered') {
+        document.getElementById('stepPreparing').className = stage === 'preparing' ? 'step active' : 'step done';
+        document.getElementById('timePreparing').textContent = now;
+        document.getElementById('timePreparing').style.display = 'block';
+        document.getElementById('pharmacyName').textContent = 'Halisi Pharma';
+        document.getElementById('pharmacyAddr').textContent = 'Westlands Estate · Est. 2–4 hours';
+      }
+
+      if (stage === 'out_for_delivery' || stage === 'delivered') {
+        document.getElementById('stepOut').className = stage === 'out_for_delivery' ? 'step active' : 'step done';
+        document.getElementById('timeOut').textContent = now;
+        document.getElementById('timeOut').style.display = 'block';
+        document.getElementById('pharmacyAddr').textContent = 'Westlands Estate · En route to you!';
+      }
+
+      if (stage === 'delivered') {
+        document.getElementById('stepDelivered').className = 'step done';
+        document.getElementById('timeDelivered').textContent = now;
+        document.getElementById('timeDelivered').style.display = 'block';
+        document.getElementById('deliveredBanner').style.display = 'block';
+        document.getElementById('pharmacyAddr').textContent = 'Westlands Estate · Delivered ✅';
+      }
+
+      // Update demo buttons
+      ['btnPreparing', 'btnOut', 'btnDelivered'].forEach(id => {
+        document.getElementById(id).className = 'demo-btn';
+      });
+      const btnMap = {
+        'preparing': 'btnPreparing',
+        'out_for_delivery': 'btnOut',
+        'delivered': 'btnDelivered'
+      };
+      if (btnMap[stage]) {
+        document.getElementById(btnMap[stage]).className = 'demo-btn active-btn';
+      }
+    }
+
+    async function setStage(stage) {
+      updateStage(stage);
+
+      // Also update backend if we have a transaction ID and token
+      if (transactionId && token) {
+        try {
+          await fetch(`${API}/payments/delivery/${transactionId}/status?token=${token}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: stage })
+          });
+        } catch(e) {
+          // Silent fail — demo still works
+        }
+      }
+    }
+
+    // Init
+    loadTracking();
+  </script>
+</body>
+</html>

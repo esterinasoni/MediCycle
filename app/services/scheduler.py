@@ -1,5 +1,4 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -37,7 +36,6 @@ def check_all_prescriptions():
     db: Session = SessionLocal()
 
     try:
-        # Get all active, verified prescriptions
         prescriptions = db.query(Prescription).filter(
             Prescription.is_active == True,
             Prescription.document_status == "verified"
@@ -50,6 +48,7 @@ def check_all_prescriptions():
                 process_prescription(prescription, db)
             except Exception as e:
                 print(f"[Scheduler] ❌ Error processing prescription {prescription.id}: {str(e)}")
+                db.rollback()
                 continue
 
     except Exception as e:
@@ -68,10 +67,20 @@ def process_prescription(prescription: Prescription, db: Session):
     Process a single prescription based on days left.
     Implements the 3-stage alert cycle (Req 4.2).
 
-    Stage 1 — Day 5: Standard refill alert
-    Stage 2 — Day 2: Urgent critical alert
+    Stage 1 — ~threshold days: Standard refill alert (once per cycle)
+    Stage 2 — ~2 days: Urgent critical alert
     Stage 3 — Day 0: Auto-charge + caregiver alert if payment fails
     """
+    # ── Skip if prescription document expired (Req 2.3) ──
+    if prescription.is_prescription_expired():
+        print(f"  → Prescription {prescription.id} EXPIRED — pausing refill automation")
+        send_sms(
+            prescription.patient.phone_number if prescription.patient else None,
+            f"Your prescription for {prescription.medication_name} has expired. "
+            f"Please visit your doctor to get a new prescription before your next refill."
+        ) if hasattr(prescription, 'patient') else None
+        return
+
     days_left = prescription.days_left()
     patient = db.query(User).filter(User.id == prescription.patient_id).first()
 
@@ -84,15 +93,25 @@ def process_prescription(prescription: Prescription, db: Session):
 
     print(f"  → {name} | {med} | {round(days_left, 1)} days left")
 
-    # ── STAGE 1: ~5 days left — Standard Alert ──
     # Get smart threshold based on patient adherence
-   
     threshold = get_smart_threshold(patient.id, db)
     threshold_low = threshold - 0.5
     threshold_high = threshold + 0.5
 
-    # ── STAGE 1: ~threshold days left — Standard Alert ──
+    # ── STAGE 1: ~threshold days left — Standard Alert (once per cycle) ──
     if threshold_low <= days_left <= threshold_high:
+
+        # Once-per-cycle guard — don't repeat alert on same day (Req 4.1)
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        already_alerted = db.query(RefillHistory).filter(
+            RefillHistory.prescription_id == prescription.id,
+            RefillHistory.actual_refill_date >= today_start
+        ).first()
+
+        if already_alerted:
+            print(f"    ⏭️  Alert already sent today for {med}, skipping.")
+            return
+
         message = (
             f"Hi {name}, your {med} supply is running low — "
             f"only {round(days_left)} days left. "
@@ -101,6 +120,18 @@ def process_prescription(prescription: Prescription, db: Session):
         )
         send_sms(patient.phone_number, message)
         print(f"    📱 Stage 1 — Standard alert sent to {mask_phone(patient.phone_number)}")
+
+        # Also alert caregiver at Stage 1 (Req 7.1)
+        if patient.caregiver_phone:
+            caregiver_msg = (
+                f"Hi, this is MediCycle. Your dependent {name} has {round(days_left)} days "
+                f"of {med} remaining. A refill has been scheduled automatically."
+            )
+            send_sms(patient.caregiver_phone, caregiver_msg)
+            print(f"    👨‍👩‍👧 Caregiver Stage 1 alert sent to {mask_phone(patient.caregiver_phone)}")
+
+        # Log alert to prevent duplicate (Req 4.1)
+        log_refill_history(prescription, days_left, db)
 
     # ── STAGE 2: ~2 days left — Urgent Alert ──
     elif 1.5 <= days_left <= 2.5:
@@ -117,16 +148,15 @@ def process_prescription(prescription: Prescription, db: Session):
     elif days_left <= 0:
         print(f"    ⚠️  {name} has run out of {med}! Triggering auto-charge...")
 
-        # Attempt auto payment
         payment_success = attempt_auto_payment(prescription, patient, db)
 
         if not payment_success:
             print(f"    💔 Auto-payment failed — alerting caregiver...")
 
-            # Alert caregiver (Req 4.3)
+            # Alert caregiver with one-click payment link (Req 4.3)
             if patient.caregiver_phone:
                 caregiver_message = (
-                    f"URGENT: {name}'s {med} supply has run out. "
+                    f"URGENT: {name}'s {med} supply has run out and automatic payment failed. "
                     f"Please authorize their refill immediately. "
                     f"One-click payment: medicycle.app/caregiver-pay/{prescription.id}/{patient.id}"
                 )
@@ -135,7 +165,13 @@ def process_prescription(prescription: Prescription, db: Session):
             else:
                 print(f"    ⚠️  No caregiver phone registered for {name}")
 
-        # Log refill attempt in history
+            # Also notify patient about failure + retry (Req 5.1)
+            send_sms(
+                patient.phone_number,
+                f"❌ Auto-payment for {med} failed. Please update your card and retry: "
+                f"medicycle.app/pay or call us for assistance."
+            )
+
         log_refill_history(prescription, days_left, db)
 
 
@@ -151,9 +187,9 @@ def attempt_auto_payment(
     """
     Attempt to auto-charge patient for refill.
     Routes order to nearest pharmacy on success.
+    Resets prescription quantity and last refill date on success (Req 5.1).
     Returns True if payment successful.
     """
-    # Validate prerequisites
     if not patient.interswitch_token:
         print(f"    ❌ No card saved for {patient.full_name}")
         return False
@@ -189,25 +225,35 @@ def attempt_auto_payment(
         )
 
     if not result["success"]:
-        # Mark transaction failed
         transaction.status = "failed"
         db.commit()
         print(f"    ❌ Payment failed: {result.get('error')}")
         return False
 
-    # Payment successful — update transaction
+    # ── Payment successful ──
     transaction.status = "success"
     transaction.payment_reference = result["reference"]
     transaction.delivery_status = "preparing"
 
-    # Reset prescription after refill
+    # ── Reset prescription after refill (Req 5.1) ──
     prescription.last_refill_date = datetime.utcnow()
+    if prescription.frequency and prescription.frequency > 0:
+        prescription.total_quantity = prescription.frequency * 30  # restore 30-day supply
+
     db.commit()
 
     print(f"    💳 Payment SUCCESS — ₦{result['amount_naira']:,.0f} charged")
+    print(f"    🔄 Prescription reset — 30-day supply restored")
 
-    # Route order to nearest pharmacy (Req 6.5)
+    # Route to pharmacy (Req 6.5)
     route_to_pharmacy(prescription, patient, transaction, db)
+
+    # Notify patient of successful payment (Req 4.3)
+    send_sms(
+        patient.phone_number,
+        f"✅ Payment confirmed for {prescription.medication_name}. "
+        f"Your 30-day supply has been ordered. Delivery incoming!"
+    )
 
     return True
 
@@ -239,12 +285,12 @@ def route_to_pharmacy(
         print(f"    ❌ No pharmacy found for {prescription.medication_name}")
         send_sms(
             patient.phone_number,
-            f"We are currently checking stock at partner pharmacies for your {prescription.medication_name}. "
-            f"Our team will contact you shortly."
+            f"We are currently checking stock at partner pharmacies for your "
+            f"{prescription.medication_name}. Our team will contact you shortly."
         )
         return
 
-    # Check if out of stock — try failover (Req 6.6)
+    # Check inventory (Req 6.6)
     from app.models.pharmacy_inventory import PharmacyInventory
     inventory = db.query(PharmacyInventory).filter(
         PharmacyInventory.pharmacy_id == pharmacy.id,
@@ -253,28 +299,24 @@ def route_to_pharmacy(
 
     if inventory and not inventory.is_in_stock:
         print(f"    ⚠️  {pharmacy.name} is out of stock — rerouting...")
-
-        # Notify patient about rerouting
         send_sms(
             patient.phone_number,
             f"Medication secured at an alternative pharmacy due to stock availability "
             f"at your primary location. Delivery is still on track. 🚚"
         )
-
-        # Try next pharmacy
         route_to_pharmacy(
             prescription, patient, transaction, db,
             exclude_pharmacy_id=pharmacy.id
         )
         return
 
-    # Update transaction with assigned pharmacy
+    # Assign pharmacy to transaction
     transaction.delivery_status = "preparing"
     db.commit()
 
     print(f"    🏥 Order routed to: {pharmacy.name} ({pharmacy.city} — {pharmacy.zone})")
 
-    # Notify patient
+    # Confirm to patient (Req 6.5)
     amount_naira = transaction.amount / 100
     send_sms(
         patient.phone_number,
@@ -285,14 +327,73 @@ def route_to_pharmacy(
 
 
 # ══════════════════════════════════════════
+# DELIVERY STATUS UPDATES (Req 6.2)
+# ══════════════════════════════════════════
+
+def update_delivery_status(transaction_id: int, new_status: str, db: Session):
+    """
+    Update delivery status and notify patient at each stage.
+    Statuses: preparing → out_for_delivery → delivered
+    Implements Req 6.2.
+    """
+    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    if not transaction:
+        return
+
+    patient = db.query(User).filter(User.id == transaction.patient_id).first()
+    prescription = db.query(Prescription).filter(Prescription.id == transaction.prescription_id).first()
+
+    if not patient or not prescription:
+        return
+
+    old_status = transaction.delivery_status
+    transaction.delivery_status = new_status
+    db.commit()
+
+    status_messages = {
+        "preparing": (
+            f"📦 Your {prescription.medication_name} order is being prepared at the pharmacy."
+        ),
+        "out_for_delivery": (
+            f"🚚 Your {prescription.medication_name} is out for delivery! "
+            f"Expected arrival: within 2-4 hours."
+        ),
+        "delivered": (
+            f"✅ Your {prescription.medication_name} has been delivered! "
+            f"Your prescription cycle has been reset. Stay healthy! 💊"
+        )
+    }
+
+    msg = status_messages.get(new_status)
+    if msg:
+        send_sms(patient.phone_number, msg)
+        print(f"[Delivery] Status updated: {old_status} → {new_status} for tx #{transaction_id}")
+
+    # ── On delivery: reset prescription cycle (Req 6.2) ──
+    if new_status == "delivered":
+        prescription.last_refill_date = datetime.utcnow()
+        if prescription.frequency and prescription.frequency > 0:
+            prescription.total_quantity = prescription.frequency * 30
+        db.commit()
+        print(f"[Delivery] ✅ Prescription cycle reset for {prescription.medication_name}")
+
+        # ── Check-up reminder (Req 2.3) ──
+        if prescription.next_review_date:
+            days_to_review = (prescription.next_review_date - datetime.utcnow()).days
+            if days_to_review <= 7:
+                send_sms(
+                    patient.phone_number,
+                    f"📅 Reminder: Your clinician review for {prescription.medication_name} "
+                    f"is in {days_to_review} days. Please book your appointment soon."
+                )
+                print(f"[Scheduler] 📅 Review reminder sent — {days_to_review} days to review")
+
+
+# ══════════════════════════════════════════
 # REFILL HISTORY LOGGING
 # ══════════════════════════════════════════
 
-def log_refill_history(
-    prescription: Prescription,
-    days_variance: float,
-    db: Session
-):
+def log_refill_history(prescription: Prescription, days_variance: float, db: Session):
     """Log refill event for adherence score calculation."""
     history = RefillHistory(
         patient_id=prescription.patient_id,
@@ -312,15 +413,17 @@ def log_refill_history(
 def send_sms(phone: str, message: str):
     """
     Send SMS via Termii (Nigeria).
-    Currently in MOCK mode — logs to console.
-    To activate real SMS: set USE_MOCK_SMS=false and add TERMII_API_KEY in .env
+    Mock mode logs to console.
+    Set USE_MOCK_SMS=false + TERMII_API_KEY in .env to activate real SMS.
     """
+    if not phone:
+        return False
+
     if USE_MOCK_SMS:
         print(f"    📱 [MOCK SMS] → {mask_phone(phone)}")
         print(f"       Message: {message[:80]}...")
         return True
 
-    # Real Termii integration
     try:
         response = requests.post(
             "https://api.ng.termii.com/api/sms/send",
@@ -334,14 +437,12 @@ def send_sms(phone: str, message: str):
             },
             timeout=10
         )
-
         if response.status_code == 200:
             print(f"    ✅ SMS sent to {mask_phone(phone)}")
             return True
         else:
             print(f"    ❌ SMS failed: {response.text}")
             return False
-
     except Exception as e:
         print(f"    ❌ SMS error: {str(e)}")
         return False
@@ -365,7 +466,6 @@ def mask_phone(phone: str) -> str:
 def start_scheduler():
     """Start the background scheduler."""
     if not scheduler.running:
-        # Daily check at 8:00 AM
         scheduler.add_job(
             check_all_prescriptions,
             CronTrigger(hour=8, minute=0),
@@ -384,10 +484,6 @@ def stop_scheduler():
 
 
 def run_check_now():
-    """
-    Manually trigger the daily check immediately.
-    Useful for testing and demos.
-    """
+    """Manually trigger the daily check — for testing and demos."""
     print("[Scheduler] 🔧 Manual trigger initiated...")
     check_all_prescriptions()
-    

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCycle — Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef; --cream: #faf8f3; --ink: #111a14; --mid: #4a6155; --accent: #f4a935; --red: #e84545; --sidebar: #0a4a32; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); display: flex; min-height: 100vh; }
+
+    .sidebar { width: 240px; background: var(--sidebar); color: white; padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+    .sidebar-logo { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; color: white; text-decoration: none; margin-bottom: 2.5rem; display: block; }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 10px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.15); color: white; }
+    .nav-icon { font-size: 1rem; }
+    .sidebar-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; }
+    .user-info { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; }
+    .user-avatar { width: 36px; height: 36px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; }
+    .user-name { font-size: 0.85rem; font-weight: 600; color: white; }
+    .user-email { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+    .btn-logout { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; color: rgba(255,255,255,0.5); font-size: 0.85rem; cursor: pointer; border: none; background: none; transition: color 0.2s; width: 100%; text-align: left; }
+    .btn-logout:hover { color: white; }
+
+    .main { margin-left: 240px; flex: 1; padding: 2rem 2.5rem; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .page-title { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 700; }
+    .page-sub { color: var(--mid); font-size: 0.9rem; margin-top: 0.2rem; }
+    .btn-add { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--green); color: white; padding: 0.7rem 1.4rem; border-radius: 10px; font-size: 0.9rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+    .btn-add:hover { background: var(--green-light); transform: translateY(-1px); }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 2rem; }
+    .stat-card { background: white; border-radius: 16px; padding: 1.4rem; box-shadow: 0 2px 12px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .stat-card.green::before { background: var(--green); }
+    .stat-card.yellow::before { background: var(--accent); }
+    .stat-card.red::before { background: var(--red); }
+    .stat-card.blue::before { background: #4a90d9; }
+    .stat-label { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mid); margin-bottom: 0.5rem; }
+    .stat-value { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; }
+    .stat-desc { font-size: 0.78rem; color: var(--mid); margin-top: 0.25rem; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .section-heading { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700; }
+    .med-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.2rem; }
+    .med-card { background: white; border-radius: 18px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+    .med-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+    .med-card-bar { position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+    .med-card.critical .med-card-bar { background: var(--red); }
+    .med-card.warning .med-card-bar { background: var(--accent); }
+    .med-card.ok .med-card-bar { background: var(--green); }
+    .med-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem; }
+    .med-card-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
+    .med-card-dosage { font-size: 0.8rem; color: var(--mid); }
+    .urgency-badge { font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 20px; white-space: nowrap; }
+    .critical .urgency-badge { background: #ffe0e0; color: var(--red); }
+    .warning .urgency-badge { background: #fff0cc; color: #b87a00; }
+    .ok .urgency-badge { background: var(--green-pale); color: var(--green); }
+
+    .med-progress { margin: 1rem 0; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--mid); margin-bottom: 0.4rem; }
+    .progress-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+    .critical .progress-fill { background: var(--red); }
+    .warning .progress-fill { background: var(--accent); }
+    .ok .progress-fill { background: var(--green); }
+
+    .med-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+    .meta-item { background: var(--cream); border-radius: 8px; padding: 0.5rem 0.7rem; }
+    .meta-label { font-size: 0.7rem; color: var(--mid); margin-bottom: 0.1rem; }
+    .meta-value { font-size: 0.82rem; font-weight: 600; }
+
+    .med-card-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .btn-sm { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+    .btn-sm-outline { background: transparent; border: 1.5px solid #e0e8e4; color: var(--mid); }
+    .btn-sm-outline:hover { border-color: var(--green); color: var(--green); }
+    .btn-sm-danger { background: #fff0f0; color: var(--red); border: 1.5px solid #ffd0d0; }
+    .btn-sm-danger:hover { background: var(--red); color: white; }
+    .btn-sm-refill { background: var(--green-pale); color: var(--green); border: 1.5px solid #b2dfcc; }
+    .btn-sm-refill:hover { background: var(--green); color: white; }
+    .btn-sm-refill:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .expiry-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+    .expiry-tag { font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 6px; font-weight: 500; }
+    .expiry-ok { background: var(--green-pale); color: var(--green); }
+    .expiry-warn { background: #fff0cc; color: #b87a00; }
+    .expiry-expired { background: #ffe0e0; color: var(--red); }
+    .expiry-none { background: #f0f0f0; color: #888; }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h4 { font-family: 'Fraunces', serif; font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .empty-state p { color: var(--mid); margin-bottom: 1.5rem; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; padding: 1.5rem 0.5rem; }
+      .sidebar-logo { font-size: 1rem; text-align: center; }
+      .nav-item span:not(.nav-icon) { display: none; }
+      .user-info, .user-name, .user-email { display: none; }
+      .main { margin-left: 60px; padding: 1.5rem; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">M<span>C</span></a>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showView('dashboard')" id="navDashboard"><span class="nav-icon">🏠</span><span>Dashboard</span></button>
+      <button class="nav-item" onclick="showView('prescriptions')" id="navPrescriptions"><span class="nav-icon">💊</span><span>Medications</span></button>
+      <button class="nav-item" onclick="window.location.href='add-prescription.html'"><span class="nav-icon">➕</span><span>Add Medication</span></button>
+      <button class="nav-item" onclick="window.location.href='payment.html'"><span class="nav-icon">💳</span><span>Payments</span></button>
+      <button class="nav-item" onclick="showView('delivery')" id="navDelivery"><span class="nav-icon">🚚</span><span>Deliveries</span></button>
+      <button class="nav-item" onclick="showView('profile')" id="navProfile"><span class="nav-icon">👤</span><span>My Profile</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-info">
+        <div class="user-avatar" id="avatarInitial">?</div>
+        <div>
+          <div class="user-name" id="sidebarName">Loading...</div>
+          <div class="user-email" id="sidebarEmail"></div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">🚪 <span>Sign Out</span></button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- DASHBOARD VIEW -->
+    <div class="view active" id="viewDashboard">
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Good morning 👋</h1>
+          <p class="page-sub" id="dashSubtitle">Here's your medication overview</p>
+        </div>
+        <a href="add-prescription.html" class="btn-add">+ Add Medication</a>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card green"><div class="stat-label">Total Medications</div><div class="stat-value" id="statTotal">—</div><div class="stat-desc">Active prescriptions</div></div>
+        <div class="stat-card red"><div class="stat-label">Needs Attention</div><div class="stat-value" id="statCritical">—</div><div class="stat-desc">Critical or warning</div></div>
+        <div class="stat-card yellow"><div class="stat-label">Adherence Score</div><div class="stat-value" id="statAdherence">—</div><div class="stat-desc">Out of 100</div></div>
+        <div class="stat-card blue"><div class="stat-label">Auto-Refill</div><div class="stat-value" id="statAutorefill">ON</div><div class="stat-desc">Card saved</div></div>
+      </div>
+      <div class="section-header">
+        <h2 class="section-heading">Your Medications</h2>
+        <a href="add-prescription.html" class="btn-add" style="font-size:0.82rem;padding:0.5rem 1rem;">+ Add New</a>
+      </div>
+      <div id="medGrid" class="med-grid"></div>
+    </div>
+
+    <!-- PRESCRIPTIONS VIEW -->
+    <div class="view" id="viewPrescriptions">
+      <div class="topbar">
+        <div><h1 class="page-title">All Medications</h1><p class="page-sub">Manage your prescription medications</p></div>
+        <a href="add-prescription.html" class="btn-add">+ Add Medication</a>
+      </div>
+      <div id="medGridFull" class="med-grid"></div>
+    </div>
+
+    <!-- DELIVERY VIEW -->
+    <div class="view" id="viewDelivery">
+      <div class="topbar">
+        <div><h1 class="page-title">Deliveries</h1><p class="page-sub">Track your medication orders</p></div>
+      </div>
+      <div id="deliveryList"></div>
+    </div>
+
+    <!-- PROFILE VIEW -->
+    <div class="view" id="viewProfile">
+      <div class="topbar">
+        <div><h1 class="page-title">My Profile</h1><p class="page-sub">Manage your details, caregiver and delivery address</p></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+        <div style="background:white;border-radius:18px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+          <h3 style="font-family:Fraunces,serif;font-size:1.1rem;margin-bottom:1.2rem;">👤 Personal Details</h3>
+          <div style="display:flex;flex-direction:column;gap:0.8rem;">
+            <div style="background:var(--cream);border-radius:10px;padding:0.8rem 1rem;"><div style="font-size:0.72rem;color:var(--mid);text-transform:uppercase;font-weight:600;margin-bottom:0.2rem;">Full Name</div><div style="font-weight:600;" id="profileName">—</div></div>
+            <div style="background:var(--cream);border-radius:10px;padding:0.8rem 1rem;"><div style="font-size:0.72rem;color:var(--mid);text-transform:uppercase;font-weight:600;margin-bottom:0.2rem;">Email</div><div style="font-weight:600;" id="profileEmail">—</div></div>
+            <div style="background:var(--cream);border-radius:10px;padding:0.8rem 1rem;"><div style="font-size:0.72rem;color:var(--mid);text-transform:uppercase;font-weight:600;margin-bottom:0.2rem;">Phone</div><div style="font-weight:600;" id="profilePhone">—</div></div>
+            <div style="background:var(--cream);border-radius:10px;padding:0.8rem 1rem;"><div style="font-size:0.72rem;color:var(--mid);text-transform:uppercase;font-weight:600;margin-bottom:0.2rem;">Account Status</div><div style="font-weight:600;color:var(--green);" id="profileStatus">—</div></div>
+          </div>
+        </div>
+
+        <div style="background:white;border-radius:18px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+          <h3 style="font-family:Fraunces,serif;font-size:1.1rem;margin-bottom:0.4rem;">👨‍👩‍👧 Caregiver / Emergency Contact</h3>
+          <p style="font-size:0.82rem;color:var(--mid);margin-bottom:1.2rem;line-height:1.5;">Your caregiver receives alerts and a one-click payment link if auto-payment fails.</p>
+          <div id="caregiverDisplay" style="margin-bottom:1.2rem;"></div>
+          <div id="caregiverForm">
+            <div style="margin-bottom:0.8rem;"><label style="display:block;font-size:0.78rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Caregiver Name</label><input type="text" id="cgName" placeholder="e.g. Adaeze Okafor" style="width:100%;padding:0.7rem 0.9rem;border-radius:10px;border:1.5px solid #e0e8e4;font-size:0.9rem;font-family:DM Sans,sans-serif;outline:none;"/></div>
+            <div style="margin-bottom:1rem;"><label style="display:block;font-size:0.78rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Caregiver Phone</label><input type="tel" id="cgPhone" placeholder="e.g. 08098765432" style="width:100%;padding:0.7rem 0.9rem;border-radius:10px;border:1.5px solid #e0e8e4;font-size:0.9rem;font-family:DM Sans,sans-serif;outline:none;"/></div>
+            <div id="cgError" style="background:#fff0f0;border:1px solid #ffcdd2;color:var(--red);padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+            <div id="cgSuccess" style="background:var(--green-pale);border:1px solid #b2dfcc;color:var(--green);padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+            <button onclick="saveCaregiver()" style="width:100%;padding:0.75rem;background:var(--green);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;" id="cgBtn">💾 Save Caregiver</button>
+          </div>
+        </div>
+
+        <div style="background:white;border-radius:18px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+          <h3 style="font-family:Fraunces,serif;font-size:1.1rem;margin-bottom:0.4rem;">📍 Delivery Address</h3>
+          <p style="font-size:0.82rem;color:var(--mid);margin-bottom:1.2rem;">Used to route medication deliveries to your nearest pharmacy.</p>
+          <div style="margin-bottom:0.8rem;"><label style="display:block;font-size:0.78rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Street Address</label><input type="text" id="addrStreet" placeholder="23 Allen Avenue" style="width:100%;padding:0.7rem 0.9rem;border-radius:10px;border:1.5px solid #e0e8e4;font-size:0.9rem;font-family:DM Sans,sans-serif;outline:none;"/></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:0.8rem;">
+            <div><label style="display:block;font-size:0.78rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">City</label><input type="text" id="addrCity" placeholder="Lagos" style="width:100%;padding:0.7rem 0.9rem;border-radius:10px;border:1.5px solid #e0e8e4;font-size:0.9rem;font-family:DM Sans,sans-serif;outline:none;"/></div>
+            <div><label style="display:block;font-size:0.78rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">State</label><input type="text" id="addrState" placeholder="Lagos State" style="width:100%;padding:0.7rem 0.9rem;border-radius:10px;border:1.5px solid #e0e8e4;font-size:0.9rem;font-family:DM Sans,sans-serif;outline:none;"/></div>
+          </div>
+          <div style="margin-bottom:1rem;"><label style="display:block;font-size:0.78rem;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">Landmark</label><input type="text" id="addrLandmark" placeholder="Near GTBank" style="width:100%;padding:0.7rem 0.9rem;border-radius:10px;border:1.5px solid #e0e8e4;font-size:0.9rem;font-family:DM Sans,sans-serif;outline:none;"/></div>
+          <div id="addrError" style="background:#fff0f0;border:1px solid #ffcdd2;color:var(--red);padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+          <div id="addrSuccess" style="background:var(--green-pale);border:1px solid #b2dfcc;color:var(--green);padding:0.6rem 0.9rem;border-radius:8px;font-size:0.82rem;margin-bottom:0.8rem;display:none;"></div>
+          <button onclick="saveAddress()" style="width:100%;padding:0.75rem;background:var(--green);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">📍 Update Address</button>
+        </div>
+
+        <div style="background:white;border-radius:18px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.05);">
+          <h3 style="font-family:Fraunces,serif;font-size:1.1rem;margin-bottom:1.2rem;">✅ Account Setup Checklist</h3>
+          <div style="display:flex;flex-direction:column;gap:0.8rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk1">⬜</span><span style="font-size:0.88rem;font-weight:500;">Account verified</span></div>
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk2">⬜</span><span style="font-size:0.88rem;font-weight:500;">Card saved for auto-refill</span></div>
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk3">⬜</span><span style="font-size:0.88rem;font-weight:500;">Delivery address added</span></div>
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk4">⬜</span><span style="font-size:0.88rem;font-weight:500;">Caregiver contact added</span></div>
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk5">⬜</span><span style="font-size:0.88rem;font-weight:500;">At least one medication added</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    const API = 'http://127.0.0.1:8000';
+    const token = localStorage.getItem('mc_token');
+    if (!token) window.location.href = 'login.html';
+
+    let prescriptions = [];
+
+    function showView(name) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`view${name.charAt(0).toUpperCase()+name.slice(1)}`).classList.add('active');
+      const navMap = { dashboard: 'navDashboard', prescriptions: 'navPrescriptions', delivery: 'navDelivery', profile: 'navProfile' };
+      if (navMap[name]) document.getElementById(navMap[name]).classList.add('active');
+      if (name === 'prescriptions') renderMedGrid('medGridFull');
+      if (name === 'delivery') loadDeliveries();
+    }
+
+    function logout() { localStorage.removeItem('mc_token'); localStorage.removeItem('mc_user'); window.location.href = 'login.html'; }
+
+    function urgencyClass(days) { if (days <= 3) return 'critical'; if (days <= 5) return 'warning'; return 'ok'; }
+    function progressWidth(days) { return Math.min(100, (days / 30) * 100); }
+
+    function expiryTag(dateStr, label) {
+      if (!dateStr) return `<span class="expiry-tag expiry-none">${label}: Not set</span>`;
+      const days = Math.floor((new Date(dateStr) - new Date()) / 86400000);
+      if (days < 0) return `<span class="expiry-tag expiry-expired">${label}: EXPIRED</span>`;
+      if (days <= 30) return `<span class="expiry-tag expiry-warn">${label}: ${days}d left</span>`;
+      return `<span class="expiry-tag expiry-ok">${label}: ${days}d left</span>`;
+    }
+
+    function renderMedCard(p) {
+      const cls = urgencyClass(p.days_left);
+      const pct = progressWidth(p.days_left);
+      return `
+        <div class="med-card ${cls}">
+          <div class="med-card-bar"></div>
+          <div class="med-card-header">
+            <div>
+              <div class="med-card-name">${p.medication_name}</div>
+              <div class="med-card-dosage">${p.dosage} · ${p.frequency}× daily</div>
+            </div>
+            <span class="urgency-badge">${p.days_left <= 3 ? '🔴' : p.days_left <= 5 ? '⚠️' : '✅'} ${p.days_left} days</span>
+          </div>
+          <div class="med-progress">
+            <div class="progress-label"><span>Supply remaining</span><span>${p.total_quantity} units</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <div class="expiry-row">
+            ${expiryTag(p.prescription_expiry_date, 'Rx')}
+            ${expiryTag(p.medication_expiry_date, 'Med')}
+          </div>
+          <div class="med-meta">
+            <div class="meta-item"><div class="meta-label">Cost</div><div class="meta-value">${p.medication_cost ? '₦' + (p.medication_cost/100).toLocaleString() : 'Not set'}</div></div>
+            <div class="meta-item"><div class="meta-label">Last Refill</div><div class="meta-value">${p.last_refill_date ? new Date(p.last_refill_date).toLocaleDateString('en-GB', {day:'numeric',month:'short'}) : '—'}</div></div>
+          </div>
+          <div class="med-card-actions">
+            <button class="btn-sm btn-sm-outline" onclick="window.location.href='add-prescription.html?edit=${p.id}'">✏️ Edit</button>
+            <button class="btn-sm btn-sm-refill" id="refillBtn${p.id}" onclick="requestRefill(${p.id}, '${p.medication_name}')">🔄 Refill</button>
+            <button class="btn-sm btn-sm-danger" onclick="deletePrescription(${p.id})">🗑 Delete</button>
+          </div>
+          <div id="refillMsg${p.id}" style="display:none;margin-top:0.6rem;font-size:0.78rem;padding:0.5rem 0.75rem;border-radius:8px;"></div>
+        </div>`;
+    }
+
+    function renderMedGrid(containerId) {
+      const container = document.getElementById(containerId);
+      if (prescriptions.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">💊</div><h4>No medications yet</h4><p>Add your first chronic medication to start tracking</p><a href="add-prescription.html" class="btn-add">+ Add Medication</a></div>`;
+        return;
+      }
+      container.innerHTML = prescriptions.map(renderMedCard).join('');
+    }
+
+    async function requestRefill(id, medName) {
+      if (!confirm(`Request a refill for ${medName}?\n\nYour saved card will be charged automatically.`)) return;
+
+      const btn = document.getElementById(`refillBtn${id}`);
+      const msg = document.getElementById(`refillMsg${id}`);
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Processing...';
+      msg.style.display = 'none';
+
+      try {
+        const res = await fetch(`${API}/payments/request-refill/${id}?token=${token}`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Refill request failed');
+
+        msg.style.cssText = 'display:block;margin-top:0.6rem;font-size:0.78rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--green-pale);color:var(--green);border:1px solid #b2dfcc;';
+        msg.innerHTML = `✅ Refill confirmed! ${data.amount_charged} charged. <a href="track.html?id=${data.transaction_id}" style="color:var(--green);font-weight:700;text-decoration:none;">Track delivery →</a>`;
+        btn.innerHTML = '✅ Refilled';
+        setTimeout(() => loadDashboard(), 2000);
+
+      } catch(err) {
+        msg.style.cssText = 'display:block;margin-top:0.6rem;font-size:0.78rem;padding:0.5rem 0.75rem;border-radius:8px;background:#fff0f0;color:var(--red);border:1px solid #ffcdd2;';
+        msg.innerHTML = `❌ ${err.message}`;
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Refill';
+      }
+    }
+
+    async function deletePrescription(id) {
+      if (!confirm('Remove this medication?')) return;
+      try {
+        await fetch(`${API}/prescriptions/${id}/delete?token=${token}`, { method: 'DELETE' });
+        await loadDashboard();
+      } catch(e) { alert('Failed to delete'); }
+    }
+
+    async function loadProfile() {
+      try {
+        const res = await fetch(`${API}/auth/profile?token=${token}`);
+        if (!res.ok) { logout(); return; }
+        const data = await res.json();
+        const name = data.full_name || 'Patient';
+        document.getElementById('sidebarName').textContent = name;
+        document.getElementById('sidebarEmail').textContent = data.email || '';
+        document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+        document.getElementById('dashSubtitle').textContent = `Welcome back, ${name.split(' ')[0]}!`;
+        document.getElementById('profileName').textContent = data.full_name || '—';
+        document.getElementById('profileEmail').textContent = data.email || '—';
+        document.getElementById('profilePhone').textContent = data.phone_number || '—';
+        document.getElementById('profileStatus').textContent = data.is_verified ? '✅ Verified' : '⚠️ Unverified';
+        if (data.address) document.getElementById('addrStreet').value = data.address;
+        if (data.city) document.getElementById('addrCity').value = data.city;
+        if (data.state) document.getElementById('addrState').value = data.state;
+        if (data.landmark) document.getElementById('addrLandmark').value = data.landmark;
+        if (data.caregiver_name || data.caregiver_phone) {
+          document.getElementById('caregiverDisplay').innerHTML = `<div style="background:var(--green-pale);border-radius:10px;padding:0.8rem 1rem;margin-bottom:1rem;"><div style="font-size:0.72rem;color:var(--mid);text-transform:uppercase;font-weight:600;margin-bottom:0.4rem;">Current Caregiver</div><div style="font-weight:700;">${data.caregiver_name || '—'}</div><div style="font-size:0.82rem;color:var(--mid);">${data.caregiver_phone || '—'}</div></div>`;
+          if (data.caregiver_name) document.getElementById('cgName').value = data.caregiver_name;
+          if (data.caregiver_phone) document.getElementById('cgPhone').value = data.caregiver_phone;
+        } else {
+          document.getElementById('caregiverDisplay').innerHTML = `<div style="background:#fff9e6;border:1px solid #ffe082;border-radius:10px;padding:0.8rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#7a5c00;">⚠️ No caregiver added yet.</div>`;
+        }
+        if (data.is_verified) document.getElementById('chk1').textContent = '✅';
+        if (data.has_card) document.getElementById('chk2').textContent = '✅';
+        if (data.has_delivery_address) document.getElementById('chk3').textContent = '✅';
+        if (data.has_caregiver) document.getElementById('chk4').textContent = '✅';
+      } catch(e) {}
+    }
+
+    async function saveCaregiver() {
+      const cgError = document.getElementById('cgError');
+      const cgSuccess = document.getElementById('cgSuccess');
+      cgError.style.display = 'none'; cgSuccess.style.display = 'none';
+      const name = document.getElementById('cgName').value.trim();
+      const phone = document.getElementById('cgPhone').value.trim();
+      if (!name || !phone) { cgError.textContent = 'Please enter both caregiver name and phone.'; cgError.style.display = 'block'; return; }
+      const btn = document.getElementById('cgBtn');
+      btn.disabled = true; btn.textContent = 'Saving...';
+      try {
+        const res = await fetch(`${API}/auth/update-caregiver?token=${token}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ caregiver_name: name, caregiver_phone: phone }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to save');
+        cgSuccess.textContent = `✅ ${data.message}`; cgSuccess.style.display = 'block';
+        document.getElementById('chk4').textContent = '✅';
+      } catch(err) { cgError.textContent = err.message; cgError.style.display = 'block'; }
+      finally { btn.disabled = false; btn.textContent = '💾 Save Caregiver'; }
+    }
+
+    async function saveAddress() {
+      const addrError = document.getElementById('addrError');
+      const addrSuccess = document.getElementById('addrSuccess');
+      addrError.style.display = 'none'; addrSuccess.style.display = 'none';
+      const address = document.getElementById('addrStreet').value.trim();
+      const city = document.getElementById('addrCity').value.trim();
+      const state = document.getElementById('addrState').value.trim();
+      const landmark = document.getElementById('addrLandmark').value.trim();
+      if (!address || !city || !state) { addrError.textContent = 'Please fill in address, city and state.'; addrError.style.display = 'block'; return; }
+      try {
+        const res = await fetch(`${API}/auth/update-location?token=${token}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ address, city, state, landmark: landmark || null }) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to update');
+        addrSuccess.textContent = '✅ Delivery address updated!'; addrSuccess.style.display = 'block';
+        document.getElementById('chk3').textContent = '✅';
+      } catch(err) { addrError.textContent = err.message; addrError.style.display = 'block'; }
+    }
+
+    async function loadAdherence() {
+      try {
+        const res = await fetch(`${API}/prescriptions/adherence/score?token=${token}`);
+        const data = await res.json();
+        document.getElementById('statAdherence').textContent = data.adherence?.score ?? '—';
+      } catch(e) {}
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await fetch(`${API}/prescriptions/my-prescriptions?token=${token}`);
+        const data = await res.json();
+        prescriptions = data.prescriptions || [];
+        document.getElementById('statTotal').textContent = prescriptions.length;
+        document.getElementById('statCritical').textContent = prescriptions.filter(p => p.days_left <= 5).length;
+        renderMedGrid('medGrid');
+        if (prescriptions.length > 0) document.getElementById('chk5').textContent = '✅';
+      } catch(e) {
+        document.getElementById('medGrid').innerHTML = '<p style="color:var(--red);padding:1rem;">Failed to load. Is the server running?</p>';
+      }
+    }
+
+    async function loadDeliveries() {
+      try {
+        const res = await fetch(`${API}/payments/history?token=${token}`);
+        const data = await res.json();
+        const list = document.getElementById('deliveryList');
+        if (!data.transactions || data.transactions.length === 0) {
+          list.innerHTML = `<div class="empty-state"><div class="empty-icon">🚚</div><h4>No deliveries yet</h4><p>Your delivery history will appear here after refills</p></div>`;
+          return;
+        }
+        list.innerHTML = data.transactions.map(t => `
+          <div style="background:white;border-radius:16px;padding:1.5rem;margin-bottom:1rem;box-shadow:0 2px 12px rgba(0,0,0,0.05);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:700;margin-bottom:0.3rem;">💊 Prescription #${t.prescription_id}</div>
+              <div style="font-size:0.85rem;color:var(--mid);">₦${(t.amount/100).toLocaleString()} · ${new Date(t.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})}</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:${t.status==='success'?'var(--green-pale)':'#fff0cc'};color:${t.status==='success'?'var(--green)':'#b87a00'};font-weight:600;">${t.status}</span>
+              <span style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:#e8f0ff;color:#4a6dd9;font-weight:600;">🚚 ${t.delivery_status}</span>
+              <a href="track.html?id=${t.id}" style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:var(--green-pale);color:var(--green);font-weight:600;text-decoration:none;">Track →</a>
+            </div>
+          </div>`).join('');
+      } catch(e) {}
+    }
+
+    // Init
+    loadProfile();
+    loadDashboard();
+    loadAdherence();
+    setInterval(() => { loadDashboard(); loadAdherence(); }, 30000);
+  </script>
+</body>
+</html>

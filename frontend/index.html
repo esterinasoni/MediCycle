@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCycle — Never Miss a Refill</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef;
+      --cream: #faf8f3; --ink: #111a14; --mid: #4a6155;
+      --accent: #f4a935; --red: #e84545; --white: #ffffff;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); overflow-x: hidden; }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 4rem;
+      background: rgba(250,248,243,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(14,110,74,0.1);
+    }
+    .logo { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 700; color: var(--green); text-decoration: none; }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 2rem; align-items: center; }
+    .nav-links a { text-decoration: none; color: var(--mid); font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--green); }
+    .btn-nav { background: var(--green); color: white !important; padding: 0.6rem 1.4rem; border-radius: 50px; font-size: 0.9rem; font-weight: 500; transition: background 0.2s, transform 0.2s; }
+    .btn-nav:hover { background: var(--green-light) !important; transform: translateY(-1px); }
+
+    .hero { min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 7rem 4rem 4rem; gap: 4rem; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; top: -200px; right: -200px; width: 700px; height: 700px; background: radial-gradient(circle, rgba(14,110,74,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+    .hero-tag { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--green-pale); color: var(--green); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem; animation: fadeUp 0.6s ease both; }
+    .hero-tag::before { content: ''; width: 8px; height: 8px; background: var(--green-light); border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+    h1 { font-family: 'Fraunces', serif; font-size: clamp(2.8rem, 5vw, 4.5rem); line-height: 1.1; font-weight: 700; color: var(--ink); margin-bottom: 1.5rem; animation: fadeUp 0.7s ease 0.1s both; }
+    h1 em { font-style: italic; color: var(--green); }
+    .hero-sub { font-size: 1.15rem; color: var(--mid); line-height: 1.7; max-width: 480px; margin-bottom: 2.5rem; font-weight: 300; animation: fadeUp 0.7s ease 0.2s both; }
+    .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; animation: fadeUp 0.7s ease 0.3s both; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--green); color: white; padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 20px rgba(14,110,74,0.3); }
+    .btn-primary:hover { background: var(--green-light); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(14,110,74,0.4); }
+    .btn-secondary { display: inline-flex; align-items: center; gap: 0.5rem; background: transparent; color: var(--green); padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600; text-decoration: none; border: 2px solid var(--green); transition: all 0.2s; }
+    .btn-secondary:hover { background: var(--green-pale); transform: translateY(-2px); }
+
+    .hero-visual { position: relative; animation: float 4s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .phone-card { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.12); position: relative; overflow: hidden; }
+    .phone-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--green), var(--green-light), var(--accent)); }
+    .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .card-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .card-name { font-weight: 600; font-size: 0.95rem; }
+    .card-sub { font-size: 0.78rem; color: var(--mid); }
+    .med-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .med-item { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1rem; background: var(--cream); border-radius: 12px; border-left: 3px solid transparent; }
+    .med-item.critical { border-left-color: var(--red); background: #fff5f5; }
+    .med-item.warning { border-left-color: var(--accent); background: #fffbf0; }
+    .med-item.ok { border-left-color: var(--green); background: var(--green-pale); }
+    .med-name { font-weight: 600; font-size: 0.88rem; }
+    .med-dose { font-size: 0.75rem; color: var(--mid); margin-top: 2px; }
+    .med-days { font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 20px; }
+    .critical .med-days { background: #ffe0e0; color: var(--red); }
+    .warning .med-days { background: #fff0cc; color: #b87a00; }
+    .ok .med-days { background: var(--green-pale); color: var(--green); }
+    .floating-badge { position: absolute; background: white; border-radius: 14px; padding: 0.7rem 1rem; box-shadow: 0 8px 30px rgba(0,0,0,0.12); font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .badge-1 { top: -20px; right: -20px; color: var(--green); }
+    .badge-2 { bottom: -20px; left: -20px; color: #b87a00; }
+
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; padding: 3rem 4rem; background: var(--green); }
+    .stat { text-align: center; color: white; }
+    .stat-num { font-family: 'Fraunces', serif; font-size: 2.8rem; font-weight: 700; display: block; margin-bottom: 0.3rem; }
+    .stat-label { font-size: 0.9rem; opacity: 0.8; }
+
+    .section { padding: 6rem 4rem; }
+    .section-label { display: inline-block; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 1rem; }
+    .section-title { font-family: 'Fraunces', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; line-height: 1.15; margin-bottom: 1rem; }
+    .section-sub { color: var(--mid); font-size: 1.05rem; max-width: 500px; line-height: 1.7; margin-bottom: 3rem; font-weight: 300; }
+
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; position: relative; }
+    .steps::before { content: ''; position: absolute; top: 40px; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, var(--green-pale), var(--green), var(--green-pale)); }
+    .step { background: white; border-radius: 20px; padding: 2rem 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.06); position: relative; transition: transform 0.2s; }
+    .step:hover { transform: translateY(-4px); }
+    .step-num { width: 48px; height: 48px; border-radius: 50%; background: var(--green); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 700; margin: 0 auto 1.2rem; position: relative; z-index: 1; }
+    .step h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .step p { font-size: 0.88rem; color: var(--mid); line-height: 1.6; }
+    .step-icon { font-size: 1.8rem; margin-bottom: 0.8rem; }
+
+    .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    .feature-list { display: flex; flex-direction: column; gap: 1.5rem; }
+    .feature-item { display: flex; gap: 1rem; align-items: flex-start; padding: 1.2rem; border-radius: 16px; transition: background 0.2s; cursor: default; }
+    .feature-item:hover { background: var(--green-pale); }
+    .feature-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--green-pale); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .feature-item h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .feature-item p { font-size: 0.85rem; color: var(--mid); line-height: 1.6; }
+    .feature-visual { background: var(--ink); border-radius: 24px; padding: 2rem; color: white; font-family: monospace; font-size: 0.82rem; line-height: 1.8; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .code-line { display: flex; gap: 1rem; }
+    .code-time { color: #4a9a72; opacity: 0.7; }
+    .code-green { color: #4fd99b; }
+    .code-yellow { color: var(--accent); }
+    .code-red { color: #ff6b6b; }
+    .code-white { color: #e8e8e8; }
+    .code-cursor { display: inline-block; width: 8px; height: 14px; background: var(--green-light); margin-left: 2px; animation: blink 1s infinite; vertical-align: middle; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .cta-section { background: var(--ink); color: white; padding: 6rem 4rem; text-align: center; position: relative; overflow: hidden; }
+    .cta-section::before { content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 600px; height: 400px; background: radial-gradient(circle, rgba(14,110,74,0.3) 0%, transparent 70%); pointer-events: none; }
+    .cta-section h2 { font-family: 'Fraunces', serif; font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 700; margin-bottom: 1rem; position: relative; z-index: 1; }
+    .cta-section h2 em { color: var(--green-light); font-style: italic; }
+    .cta-section p { color: rgba(255,255,255,0.7); font-size: 1.1rem; margin-bottom: 2.5rem; position: relative; z-index: 1; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; position: relative; z-index: 1; }
+    .btn-white { background: white; color: var(--ink); padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,255,255,0.2); }
+    .btn-ghost { background: transparent; color: white; padding: 0.9rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 600; text-decoration: none; border: 2px solid rgba(255,255,255,0.3); transition: all 0.2s; }
+    .btn-ghost:hover { border-color: white; transform: translateY(-2px); }
+
+    footer { background: var(--ink); color: rgba(255,255,255,0.5); padding: 2rem 4rem; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; }
+    footer .logo { color: rgba(255,255,255,0.8); font-size: 1.2rem; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 900px) {
+      nav { padding: 1rem 1.5rem; }
+      .hero { grid-template-columns: 1fr; padding: 6rem 1.5rem 3rem; }
+      .hero-visual { max-width: 360px; margin: 0 auto; }
+      .stats { grid-template-columns: 1fr; padding: 2rem 1.5rem; }
+      .section { padding: 4rem 1.5rem; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .steps::before { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .cta-section { padding: 4rem 1.5rem; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html" class="logo">Medi<span>Cycle</span></a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="login.html" class="btn-nav">Sign In →</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-tag">🇳🇬 Built for Nigeria</div>
+      <h1>Never miss a<br/><em>medication refill</em><br/>again.</h1>
+      <p class="hero-sub">MediCycle automatically tracks your chronic medications, alerts you when supplies run low, and charges your card — so your health never runs out of stock.</p>
+      <div class="hero-cta">
+        <a href="register.html" class="btn-primary">Get Started Free →</a>
+        <a href="#how" class="btn-secondary">See How It Works</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="floating-badge badge-1">✅ Auto-refill enabled</div>
+      <div class="phone-card">
+        <div class="card-header">
+          <div class="card-avatar">👤</div>
+          <div>
+            <div class="card-name">Emeka Okafor</div>
+            <div class="card-sub">3 active medications</div>
+          </div>
+        </div>
+        <div class="med-list">
+          <div class="med-item critical">
+            <div><div class="med-name">Metformin 500mg</div><div class="med-dose">2× daily · Auto-refill ON</div></div>
+            <span class="med-days">🔴 1 day left</span>
+          </div>
+          <div class="med-item warning">
+            <div><div class="med-name">Amlodipine 5mg</div><div class="med-dose">1× daily · Auto-refill ON</div></div>
+            <span class="med-days">⚠️ 4 days left</span>
+          </div>
+          <div class="med-item ok">
+            <div><div class="med-name">Lisinopril 10mg</div><div class="med-dose">1× daily · Auto-refill ON</div></div>
+            <span class="med-days">✅ 18 days left</span>
+          </div>
+        </div>
+      </div>
+      <div class="floating-badge badge-2">💳 ₦5,000 charged</div>
+    </div>
+  </section>
+
+  <div class="stats">
+    <div class="stat"><span class="stat-num">47M+</span><span class="stat-label">Nigerians with chronic conditions</span></div>
+    <div class="stat"><span class="stat-num">68%</span><span class="stat-label">Miss refills due to forgetfulness</span></div>
+    <div class="stat"><span class="stat-num">3×</span><span class="stat-label">Better outcomes with consistent medication</span></div>
+  </div>
+
+  <section class="section" id="how">
+    <div style="text-align:center; margin-bottom:1rem;">
+      <span class="section-label">The Process</span>
+      <h2 class="section-title">Set it once. Stay healthy forever.</h2>
+      <p class="section-sub" style="margin: 0 auto 3rem;">Four simple steps and you never have to worry about running out of medication again.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-icon">📋</div><div class="step-num">1</div><h3>Register & Add Meds</h3><p>Enter your chronic medications, dosage, and how many pills you have left.</p></div>
+      <div class="step"><div class="step-icon">💳</div><div class="step-num">2</div><h3>Save Your Card</h3><p>Securely tokenized via Interswitch. We never store your actual card details.</p></div>
+      <div class="step"><div class="step-icon">🔔</div><div class="step-num">3</div><h3>Get Alerts</h3><p>Receive SMS alerts at 5 days, 2 days, and day zero — never caught off-guard.</p></div>
+      <div class="step"><div class="step-icon">🏥</div><div class="step-num">4</div><h3>Auto-Refill & Deliver</h3><p>Card charged automatically and medication routed to the nearest pharmacy.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="features" style="background: white;">
+    <div class="features-grid">
+      <div>
+        <span class="section-label">Features</span>
+        <h2 class="section-title">Everything chronic patients need.</h2>
+        <p class="section-sub">Powered by Interswitch payments, AI prescription parsing, and smart pharmacy routing.</p>
+        <div class="feature-list">
+          <div class="feature-item"><div class="feature-icon">🤖</div><div><h4>AI Prescription Parsing</h4><p>Upload a photo of your prescription — Gemini AI extracts medication details automatically.</p></div></div>
+          <div class="feature-item"><div class="feature-icon">🏥</div><div><h4>Smart Pharmacy Routing</h4><p>Orders go to the nearest pharmacy with stock. If out of stock, we reroute automatically.</p></div></div>
+          <div class="feature-item"><div class="feature-icon">📊</div><div><h4>Adherence Scoring</h4><p>Track your medication adherence with a 0–100 score. Better adherence = earlier alerts.</p></div></div>
+          <div class="feature-item"><div class="feature-icon">👨‍👩‍👧</div><div><h4>Caregiver Alerts</h4><p>If auto-payment fails, your caregiver gets an alert with a one-click payment link.</p></div></div>
+        </div>
+      </div>
+      <div class="feature-visual">
+        <div style="margin-bottom:1rem;opacity:0.5;font-size:0.75rem;">● ● ●&nbsp;&nbsp;MediCycle Scheduler</div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-green">[Scheduler] Running daily check...</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-white">Checking 3 prescriptions for Emeka</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-yellow">→ Metformin | 1.0 days left</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-red">⚠️  Auto-charge triggered...</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-green">💳 Payment SUCCESS — ₦3,500</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-green">🏥 Routed → MedPlus Victoria Island</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-white">📱 SMS sent → 080****234</span></div>
+        <div class="code-line"><span class="code-time">08:00</span>&nbsp;<span class="code-green">[Scheduler] ✅ Daily check complete.</span></div>
+        <div class="code-line" style="margin-top:0.5rem;"><span class="code-time">08:00</span>&nbsp;<span class="code-white">_<span class="code-cursor"></span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>Your health deserves<br/><em>automation.</em></h2>
+    <p>Join thousands of Nigerians who never miss a refill with MediCycle.</p>
+    <div class="cta-buttons">
+      <a href="register.html" class="btn-white">Create Free Account →</a>
+      <a href="login.html" class="btn-ghost">Sign In</a>
+    </div>
+  </section>
+
+  <footer>
+    <a href="index.html" class="logo">Medi<span>Cycle</span></a>
+    <span>© 2026 MediCycle · Enyata × Interswitch Buildathon</span>
+    <span>Built with ❤️ for chronic care patients</span>
+  </footer>
+</body>
+</html>

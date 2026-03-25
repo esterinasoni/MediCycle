@@ -16,6 +16,7 @@ router = APIRouter()
 UPLOAD_FOLDER = "uploads/prescriptions"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+
 # ── REQUEST MODELS ──
 class AddPrescriptionRequest(BaseModel):
     medication_name: str
@@ -25,16 +26,31 @@ class AddPrescriptionRequest(BaseModel):
     last_refill_date: str
     medication_cost: Optional[float] = None
     next_review_date: Optional[str] = None
-    prescription_expiry_date: Optional[str] = None  # when doctor's script expires
-    medication_expiry_date: Optional[str] = None    # when physical pills expire
+    prescription_issue_date: Optional[str] = None    # when doctor issued script
+    prescription_expiry_date: Optional[str] = None   # when doctor's script expires
+    medication_expiry_date: Optional[str] = None     # when physical pills expire
 
 class UpdatePrescriptionRequest(BaseModel):
     total_quantity: Optional[float] = None
     frequency: Optional[float] = None
     medication_cost: Optional[float] = None
     next_review_date: Optional[str] = None
+    prescription_issue_date: Optional[str] = None
     prescription_expiry_date: Optional[str] = None
     medication_expiry_date: Optional[str] = None
+
+
+# ── HELPER ──
+def parse_date(date_str: str, field_name: str) -> datetime:
+    """Parse a date string or raise a clean HTTP error."""
+    try:
+        return datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid {field_name} format. Use YYYY-MM-DD"
+        )
+
 
 # ── ROUTES ──
 
@@ -47,53 +63,12 @@ def add_prescription(
 ):
     user = get_current_user(token, db)
 
-    # Parse last refill date
-    try:
-        last_refill = datetime.strptime(request.last_refill_date, "%Y-%m-%d")
-    except ValueError:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid date format. Use YYYY-MM-DD"
-        )
+    last_refill = parse_date(request.last_refill_date, "last_refill_date")
+    next_review = parse_date(request.next_review_date, "next_review_date") if request.next_review_date else None
+    prescription_issue = parse_date(request.prescription_issue_date, "prescription_issue_date") if request.prescription_issue_date else None
+    prescription_expiry = parse_date(request.prescription_expiry_date, "prescription_expiry_date") if request.prescription_expiry_date else None
+    medication_expiry = parse_date(request.medication_expiry_date, "medication_expiry_date") if request.medication_expiry_date else None
 
-    # Parse next review date
-    next_review = None
-    if request.next_review_date:
-        try:
-            next_review = datetime.strptime(request.next_review_date, "%Y-%m-%d")
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid review date format. Use YYYY-MM-DD"
-            )
-
-    # Parse prescription expiry date
-    prescription_expiry = None
-    if request.prescription_expiry_date:
-        try:
-            prescription_expiry = datetime.strptime(
-                request.prescription_expiry_date, "%Y-%m-%d"
-            )
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid prescription expiry date format. Use YYYY-MM-DD"
-            )
-
-    # Parse medication expiry date
-    medication_expiry = None
-    if request.medication_expiry_date:
-        try:
-            medication_expiry = datetime.strptime(
-                request.medication_expiry_date, "%Y-%m-%d"
-            )
-        except ValueError:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid medication expiry date format. Use YYYY-MM-DD"
-            )
-
-    # Create prescription
     new_prescription = Prescription(
         patient_id=user.id,
         medication_name=request.medication_name,
@@ -103,6 +78,7 @@ def add_prescription(
         last_refill_date=last_refill,
         medication_cost=request.medication_cost,
         next_review_date=next_review,
+        prescription_issue_date=prescription_issue,
         prescription_expiry_date=prescription_expiry,
         medication_expiry_date=medication_expiry,
         document_status=PrescriptionStatus.INCOMPLETE.value
@@ -124,6 +100,7 @@ def add_prescription(
             "total_quantity": new_prescription.total_quantity,
             "days_left": round(days_left, 1),
             "last_refill_date": new_prescription.last_refill_date,
+            "prescription_issue_date": new_prescription.prescription_issue_date,
             "prescription_expiry_date": new_prescription.prescription_expiry_date,
             "medication_expiry_date": new_prescription.medication_expiry_date,
             "days_until_prescription_expires": new_prescription.days_until_prescription_expires(),
@@ -152,7 +129,6 @@ def upload_document(
     if not prescription:
         raise HTTPException(status_code=404, detail="Prescription not found")
 
-    # Validate file type
     allowed_types = ["image/jpeg", "image/png", "application/pdf"]
     if file.content_type not in allowed_types:
         raise HTTPException(
@@ -160,7 +136,6 @@ def upload_document(
             detail="Only JPG, PNG, or PDF files allowed"
         )
 
-    # Save file
     file_extension = file.filename.split(".")[-1]
     file_name = f"patient_{user.id}_prescription_{prescription_id}.{file_extension}"
     file_path = os.path.join(UPLOAD_FOLDER, file_name)
@@ -168,7 +143,6 @@ def upload_document(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Update prescription status
     prescription.document_path = file_path
     prescription.document_status = PrescriptionStatus.VERIFIED.value
     db.commit()
@@ -238,6 +212,7 @@ def get_my_prescriptions(token: str, db: Session = Depends(get_db)):
             "days_left": round(days_left, 1),
             "urgency": urgency,
             "last_refill_date": p.last_refill_date,
+            "prescription_issue_date": p.prescription_issue_date,
             "prescription_expiry_date": p.prescription_expiry_date,
             "prescription_status": rx_status,
             "medication_expiry_date": p.medication_expiry_date,
@@ -281,6 +256,7 @@ def get_prescription(
         "total_quantity": prescription.total_quantity,
         "days_left": round(days_left, 1),
         "last_refill_date": prescription.last_refill_date,
+        "prescription_issue_date": prescription.prescription_issue_date,
         "prescription_expiry_date": prescription.prescription_expiry_date,
         "days_until_prescription_expires": prescription.days_until_prescription_expires(),
         "medication_expiry_date": prescription.medication_expiry_date,
@@ -319,23 +295,20 @@ def update_prescription(
     if request.medication_cost is not None:
         prescription.medication_cost = request.medication_cost
     if request.next_review_date is not None:
-        prescription.next_review_date = datetime.strptime(
-            request.next_review_date, "%Y-%m-%d"
-        )
+        prescription.next_review_date = parse_date(request.next_review_date, "next_review_date")
+    if request.prescription_issue_date is not None:
+        prescription.prescription_issue_date = parse_date(request.prescription_issue_date, "prescription_issue_date")
     if request.prescription_expiry_date is not None:
-        prescription.prescription_expiry_date = datetime.strptime(
-            request.prescription_expiry_date, "%Y-%m-%d"
-        )
+        prescription.prescription_expiry_date = parse_date(request.prescription_expiry_date, "prescription_expiry_date")
     if request.medication_expiry_date is not None:
-        prescription.medication_expiry_date = datetime.strptime(
-            request.medication_expiry_date, "%Y-%m-%d"
-        )
+        prescription.medication_expiry_date = parse_date(request.medication_expiry_date, "medication_expiry_date")
 
     db.commit()
 
     return {
         "message": "Prescription updated successfully!",
         "days_left": round(prescription.days_left(), 1),
+        "prescription_issue_date": prescription.prescription_issue_date,
         "prescription_expiry_date": prescription.prescription_expiry_date,
         "medication_expiry_date": prescription.medication_expiry_date
     }

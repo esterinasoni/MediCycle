@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCycle — Payments</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef; --cream: #faf8f3; --ink: #111a14; --mid: #4a6155; --accent: #f4a935; --red: #e84545; --sidebar: #0a4a32; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); display: flex; min-height: 100vh; }
+
+    .sidebar { width: 240px; background: var(--sidebar); color: white; padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+    .sidebar-logo { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; color: white; text-decoration: none; margin-bottom: 2.5rem; display: block; }
+    .sidebar-logo span { color: var(--accent); }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 10px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; margin-bottom: 0.3rem; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.15); color: white; }
+
+    .main { margin-left: 240px; flex: 1; padding: 2rem 2.5rem; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    .page-title { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 700; }
+    .page-sub { color: var(--mid); font-size: 0.9rem; margin-top: 0.2rem; }
+
+    .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+
+    /* CARD SECTION */
+    .card-section { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .section-title { font-family: 'Fraunces', serif; font-size: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    .saved-card { background: linear-gradient(135deg, var(--sidebar), var(--green)); border-radius: 16px; padding: 1.5rem; color: white; margin-bottom: 1.5rem; position: relative; overflow: hidden; }
+    .saved-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+    .card-chip { font-size: 1.5rem; margin-bottom: 1rem; }
+    .card-number { font-size: 1.1rem; letter-spacing: 0.15em; font-weight: 600; margin-bottom: 0.5rem; }
+    .card-label { font-size: 0.75rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-status { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.2); padding: 0.3rem 0.7rem; border-radius: 20px; font-size: 0.78rem; margin-top: 0.75rem; }
+    .card-status::before { content: ''; width: 6px; height: 6px; background: #4fd99b; border-radius: 50%; }
+
+    .no-card { border: 2px dashed #c8ddd5; border-radius: 16px; padding: 2rem; text-align: center; margin-bottom: 1.5rem; }
+    .no-card-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .no-card p { color: var(--mid); font-size: 0.9rem; margin-bottom: 1rem; }
+
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--mid); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    input { width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1.5px solid #e0e8e4; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; color: var(--ink); outline: none; transition: border-color 0.2s; }
+    input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(14,110,74,0.08); }
+    input::placeholder { color: #b0bdb8; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-submit { width: 100%; padding: 0.85rem; background: var(--green); color: white; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; }
+    .btn-submit:hover { background: var(--green-light); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .sandbox-notice { background: #fff9e6; border: 1px solid #ffe082; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.82rem; color: #7a5c00; margin-bottom: 1rem; }
+
+    /* HISTORY */
+    .history-section { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); grid-column: 1 / -1; }
+    .tx-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid #f0f5f2; }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-left { display: flex; align-items: center; gap: 1rem; }
+    .tx-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .tx-icon.success { background: var(--green-pale); }
+    .tx-icon.pending { background: #fff0cc; }
+    .tx-icon.failed { background: #ffe0e0; }
+    .tx-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.1rem; }
+    .tx-date { font-size: 0.78rem; color: var(--mid); }
+    .tx-right { text-align: right; }
+    .tx-amount { font-weight: 700; font-size: 0.95rem; }
+    .tx-status { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-weight: 600; margin-top: 0.2rem; display: inline-block; }
+    .status-success { background: var(--green-pale); color: var(--green); }
+    .status-pending { background: #fff0cc; color: #b87a00; }
+    .status-failed { background: #ffe0e0; color: var(--red); }
+
+    .empty-state { text-align: center; padding: 3rem; color: var(--mid); }
+    .error-msg { background: #fff0f0; border: 1px solid #ffcdd2; color: var(--red); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
+    .success-msg { background: var(--green-pale); border: 1px solid #b2dfcc; color: var(--green); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 1.5rem; }
+      .payment-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">Medi<span>Cycle</span></a>
+    <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+    <a href="dashboard.html" class="nav-item">💊 Medications</a>
+    <a href="add-prescription.html" class="nav-item">➕ Add Medication</a>
+    <a href="payment.html" class="nav-item active">💳 Payments</a>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title">Payments</h1>
+        <p class="page-sub">Manage your saved card and view payment history</p>
+      </div>
+    </div>
+
+    <div class="payment-grid">
+      <!-- CARD MANAGEMENT -->
+      <div class="card-section">
+        <h2 class="section-title">💳 Your Card</h2>
+        <div id="cardDisplay"></div>
+        <div class="error-msg" id="cardError"></div>
+        <div class="success-msg" id="cardSuccess"></div>
+
+        <div id="cardForm">
+          <div class="sandbox-notice">🧪 <strong>Sandbox Mode</strong> — Use any card number for testing. Real Interswitch credentials coming soon.</div>
+          <div class="form-group"><label>Card Number</label><input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/></div>
+          <div class="form-row">
+            <div class="form-group"><label>Expiry</label><input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5"/></div>
+            <div class="form-group"><label>CVV</label><input type="text" id="cardCvv" placeholder="123" maxlength="3"/></div>
+          </div>
+          <div class="form-group"><label>Cardholder Name</label><input type="text" id="cardName" placeholder="EMEKA OKAFOR"/></div>
+          <button class="btn-submit" id="saveCardBtn" onclick="saveCard()">🔒 Save Card Securely</button>
+        </div>
+      </div>
+
+      <!-- AUTO REFILL STATUS -->
+      <div class="card-section">
+        <h2 class="section-title">⚡ Auto-Refill Settings</h2>
+        <div style="background:var(--green-pale);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
+          <div style="font-weight:700;margin-bottom:0.5rem;color:var(--green);">🔄 Auto-Refill is Active</div>
+          <p style="font-size:0.88rem;color:var(--mid);line-height:1.6;">MediCycle will automatically charge your saved card when your medication supply runs out. You'll receive an SMS notification before each charge.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:var(--cream);border-radius:10px;">
+            <span style="font-size:0.88rem;font-weight:600;">Alert at 5 days remaining</span>
+            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ ON</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:var(--cream);border-radius:10px;">
+            <span style="font-size:0.88rem;font-weight:600;">Urgent alert at 2 days</span>
+            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ ON</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:var(--cream);border-radius:10px;">
+            <span style="font-size:0.88rem;font-weight:600;">Auto-charge at day 0</span>
+            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ ON</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:var(--cream);border-radius:10px;">
+            <span style="font-size:0.88rem;font-weight:600;">Caregiver failover alert</span>
+            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ ON</span>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem;padding:1rem;background:#fff9e6;border-radius:10px;border:1px solid #ffe082;">
+          <p style="font-size:0.82rem;color:#7a5c00;">🔒 <strong>Secured by Interswitch</strong> — Your card details are tokenized and never stored on our servers.</p>
+        </div>
+      </div>
+
+      <!-- TRANSACTION HISTORY -->
+      <div class="history-section">
+        <h2 class="section-title">📋 Transaction History</h2>
+        <div id="txList"><div class="empty-state">Loading transactions...</div></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API = 'http://127.0.0.1:8000';
+    const token = localStorage.getItem('mc_token');
+    if (!token) window.location.href = 'login.html';
+
+    function formatCard(input) {
+      let val = input.value.replace(/\D/g, '').substring(0, 16);
+      input.value = val.replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    async function checkCardStatus() {
+      // Try loading payment history — if exists, assume card is saved
+      try {
+        const res = await fetch(`${API}/payments/history?token=${token}`);
+        const data = await res.json();
+        if (data.transactions && data.transactions.length > 0) {
+          showSavedCard('**** **** **** saved');
+        } else {
+          document.getElementById('cardDisplay').innerHTML = `<div class="no-card"><div class="no-card-icon">💳</div><p>No card saved yet. Add one to enable auto-refill.</p></div>`;
+        }
+      } catch(e) {
+        document.getElementById('cardDisplay').innerHTML = `<div class="no-card"><div class="no-card-icon">💳</div><p>Add your card to enable auto-refill payments.</p></div>`;
+      }
+    }
+
+    function showSavedCard(masked) {
+      document.getElementById('cardDisplay').innerHTML = `
+        <div class="saved-card">
+          <div class="card-chip">💳</div>
+          <div class="card-number">${masked || '**** **** **** ****'}</div>
+          <div class="card-label">Saved for auto-refill</div>
+          <div class="card-status">Active · Interswitch Secured</div>
+        </div>`;
+      document.getElementById('cardForm').innerHTML = `
+        <div style="text-align:center;padding:1rem;color:var(--mid);font-size:0.9rem;">
+          <p>Card saved ✅ Auto-refill is active</p>
+          <button onclick="document.getElementById('cardForm').innerHTML=''; loadCardForm();" style="background:none;border:none;color:var(--green);font-size:0.85rem;cursor:pointer;font-weight:600;margin-top:0.5rem;font-family:DM Sans,sans-serif;">Replace card →</button>
+        </div>`;
+    }
+
+    async function saveCard() {
+      const error = document.getElementById('cardError');
+      const success = document.getElementById('cardSuccess');
+      error.style.display = 'none'; success.style.display = 'none';
+
+      const cardNumber = document.getElementById('cardNumber')?.value.replace(/\s/g, '');
+      if (!cardNumber || cardNumber.length < 16) {
+        error.textContent = 'Please enter a valid 16-digit card number.';
+        error.style.display = 'block'; return;
+      }
+
+      const btn = document.getElementById('saveCardBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>Saving securely...';
+
+      try {
+        const res = await fetch(`${API}/payments/save-card?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auth_data: `card_${cardNumber}` })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to save card');
+        success.textContent = `✅ ${data.message} Mode: ${data.mode}`;
+        success.style.display = 'block';
+        const masked = data.card_masked || `**** **** **** ${cardNumber.slice(-4)}`;
+        showSavedCard(masked);
+      } catch(err) {
+        error.textContent = err.message;
+        error.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '🔒 Save Card Securely';
+      }
+    }
+
+    async function loadTransactions() {
+      try {
+        const res = await fetch(`${API}/payments/history?token=${token}`);
+        const data = await res.json();
+        const list = document.getElementById('txList');
+        if (!data.transactions || data.transactions.length === 0) {
+          list.innerHTML = '<div class="empty-state">💳<br/><br/>No transactions yet.<br/><span style="font-size:0.85rem">Auto-refill charges will appear here.</span></div>';
+          return;
+        }
+        list.innerHTML = data.transactions.map(t => `
+          <div class="tx-item">
+            <div class="tx-left">
+              <div class="tx-icon ${t.status}">💊</div>
+              <div>
+                <div class="tx-name">Auto-Refill · Prescription #${t.prescription_id}</div>
+                <div class="tx-date">${new Date(t.created_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})} · Ref: ${t.payment_reference || 'Pending'}</div>
+              </div>
+            </div>
+            <div class="tx-right">
+              <div class="tx-amount">₦${(t.amount/100).toLocaleString()}</div>
+              <span class="tx-status status-${t.status}">${t.status}</span>
+            </div>
+          </div>`).join('');
+      } catch(e) {
+        document.getElementById('txList').innerHTML = '<div class="empty-state">Failed to load transactions</div>';
+      }
+    }
+
+    checkCardStatus();
+    loadTransactions();
+  </script>
+</body>
+</html>

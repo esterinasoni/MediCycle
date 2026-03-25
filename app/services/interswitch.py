@@ -2,31 +2,64 @@ import requests
 import os
 import base64
 import uuid
+import time
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── INTERSWITCH CONFIG ──
-CLIENT_ID = os.getenv("INTERSWITCH_CLIENT_ID", "YOUR_CLIENT_ID_HERE")
-CLIENT_SECRET = os.getenv("INTERSWITCH_CLIENT_SECRET", "YOUR_CLIENT_SECRET_HERE")
-BASE_URL = os.getenv("INTERSWITCH_BASE_URL", "https://qa.interswitchng.com")
+# ── CONFIG ──
+CLIENT_ID = os.getenv("INTERSWITCH_CLIENT_ID")
+CLIENT_SECRET = os.getenv("INTERSWITCH_SECRET_KEY")  # matches your .env
+MERCHANT_CODE = os.getenv("INTERSWITCH_MERCHANT_CODE")
+PAYMENT_ITEM_ID = os.getenv("INTERSWITCH_PAYMENT_ITEM_ID")
+ISW_ENV = os.getenv("INTERSWITCH_ENV", "sandbox")  # "sandbox" or "production"
 
-# ── HELPER: Generate unique reference ──
+# ── URLs per environment ──
+URLS = {
+    "sandbox": {
+        "base": "https://qa.interswitchng.com",
+        "passport": "https://qa.interswitchng.com/passport/oauth/token",
+        "tokenize": "https://qa.interswitchng.com/api/v2/purchases/validations/recurrents",
+        "charge": "https://qa.interswitchng.com/api/v2/purchases/recurrents",
+        "verify": "https://qa.interswitchng.com/api/v2/purchases",
+    },
+    "production": {
+        "base": "https://webpay.interswitchng.com",
+        "passport": "https://passport.interswitchng.com/passport/oauth/token",
+        "tokenize": "https://webpay.interswitchng.com/api/v2/purchases/validations/recurrents",
+        "charge": "https://webpay.interswitchng.com/api/v2/purchases/recurrents",
+        "verify": "https://webpay.interswitchng.com/api/v2/purchases",
+    }
+}
+
+ACTIVE = URLS.get(ISW_ENV, URLS["sandbox"])
+
+# ── TOKEN CACHE (avoids fetching a new token on every request) ──
+_token_cache = {"token": None, "expires_at": 0}
+
+
 def generate_ref(prefix="medicycle"):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     unique = str(uuid.uuid4())[:8].upper()
     return f"{prefix}_{timestamp}_{unique}"
 
-# ── STEP 0: Get Access Token ──
+
+# ── GET ACCESS TOKEN (cached) ──
 def get_access_token():
-    """Get Interswitch OAuth token. Valid for 1 hour."""
+    """Fetch OAuth2 token from Interswitch. Cached for 55 minutes."""
+    now = time.time()
+
+    # Return cached token if still valid
+    if _token_cache["token"] and now < _token_cache["expires_at"]:
+        return _token_cache["token"]
+
     try:
         credentials = f"{CLIENT_ID}:{CLIENT_SECRET}"
         encoded = base64.b64encode(credentials.encode()).decode()
 
         response = requests.post(
-            f"{BASE_URL}/passport/oauth/token",
+            ACTIVE["passport"],
             headers={
                 "Authorization": f"Basic {encoded}",
                 "Content-Type": "application/x-www-form-urlencoded"
@@ -34,24 +67,28 @@ def get_access_token():
             data={"grant_type": "client_credentials"},
             timeout=30
         )
+        response.raise_for_status()
+        data = response.json()
 
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        else:
-            print(f"[Interswitch] Token error: {response.status_code} - {response.text}")
-            return None
+        token = data.get("access_token")
+        expires_in = data.get("expires_in", 3600)
+
+        # Cache it with a 5-minute safety buffer
+        _token_cache["token"] = token
+        _token_cache["expires_at"] = now + expires_in - 300
+
+        return token
 
     except Exception as e:
-        print(f"[Interswitch] Token exception: {str(e)}")
+        print(f"[Interswitch] Token error: {e}")
         return None
 
 
-# ── STEP 1: Tokenize Card ──
+# ── TOKENIZE CARD ──
 def tokenize_card(auth_data: str, transaction_ref: str = None):
     """
-    Tokenize a patient's card for recurring payments.
-    auth_data: encrypted card data from frontend
-    Returns: { token, tokenExpiryDate } or None
+    Tokenize patient card for recurring charges.
+    auth_data: encrypted card data from Interswitch JS SDK on frontend.
     """
     try:
         access_token = get_access_token()
@@ -61,7 +98,7 @@ def tokenize_card(auth_data: str, transaction_ref: str = None):
         ref = transaction_ref or generate_ref("tokenize")
 
         response = requests.post(
-            f"{BASE_URL}/api/v2/purchases/validations/recurrents",
+            ACTIVE["tokenize"],
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
@@ -72,13 +109,19 @@ def tokenize_card(auth_data: str, transaction_ref: str = None):
             },
             timeout=30
         )
-
         data = response.json()
 
         if response.status_code in [200, 201]:
+            token = data.get("token")
+            if not token:
+                return {
+                    "success": False,
+                    "error": "Tokenization succeeded but no token returned",
+                    "raw": data
+                }
             return {
                 "success": True,
-                "token": data.get("token"),
+                "token": token,
                 "token_expiry": data.get("tokenExpiryDate"),
                 "transaction_ref": ref
             }
@@ -86,14 +129,15 @@ def tokenize_card(auth_data: str, transaction_ref: str = None):
             return {
                 "success": False,
                 "error": data.get("description", "Tokenization failed"),
-                "code": response.status_code
+                "code": response.status_code,
+                "raw": data
             }
 
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
-# ── STEP 2: Charge Patient (Recurring) ──
+# ── CHARGE PATIENT (recurring) ──
 def charge_patient(
     token: str,
     token_expiry: str,
@@ -102,9 +146,8 @@ def charge_patient(
     prescription_id: int
 ):
     """
-    Charge a patient using their saved card token.
-    amount_kobo: amount in kobo (₦5000 = 500000)
-    Returns: { success, reference, amount } or error
+    Charge saved card token. 
+    ⚠️  HTTP 200 is NOT enough — always check responseCode == "00".
     """
     try:
         access_token = get_access_token()
@@ -114,7 +157,7 @@ def charge_patient(
         ref = generate_ref(f"refill_{prescription_id}")
 
         response = requests.post(
-            f"{BASE_URL}/api/v2/purchases/recurrents",
+            ACTIVE["charge"],
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
@@ -132,76 +175,81 @@ def charge_patient(
         )
 
         data = response.json()
+        response_code = data.get("responseCode") or data.get("ResponseCode", "")
 
-        if response.status_code in [200, 201]:
+        # ✅ HTTP 200 + responseCode "00" = genuine success
+        if response.status_code in [200, 201] and response_code == "00":
             return {
                 "success": True,
                 "reference": ref,
                 "amount_kobo": amount_kobo,
                 "amount_naira": amount_kobo / 100,
-                "response_code": data.get("responseCode"),
-                "response_description": data.get("responseDescription")
+                "response_code": response_code,
+                "response_description": data.get("responseDescription", "Approved"),
+                "mode": ISW_ENV.upper()
             }
-        else:
-            return {
-                "success": False,
-                "error": data.get("description", "Payment failed"),
-                "code": response.status_code
-            }
+
+        # HTTP 200 but bad response code = declined (common with Interswitch)
+        error_msg = (
+            data.get("responseDescription")
+            or data.get("description")
+            or f"Payment declined (code: {response_code})"
+        )
+        return {
+            "success": False,
+            "error": error_msg,
+            "response_code": response_code,
+            "raw": data
+        }
 
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 
-# ── STEP 3: Verify Transaction ──
+# ── VERIFY TRANSACTION ──
 def verify_transaction(transaction_ref: str):
     """
-    Verify a payment was successful.
-    Always verify before marking a payment as complete!
+    Verify a recurring charge by transaction reference.
+    Always call this before marking any payment as complete.
     """
     try:
         access_token = get_access_token()
         if not access_token:
-            return {"success": False, "error": "Could not get access token"}
+            return {"verified": False, "error": "Could not get access token"}
 
         response = requests.get(
-            f"{BASE_URL}/collections/api/v1/gettransaction.json",
+            f"{ACTIVE['verify']}/{transaction_ref}",
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/json"
             },
-            params={"merchantcode": CLIENT_ID, "transactionreference": transaction_ref},
             timeout=30
         )
 
         data = response.json()
+        response_code = data.get("responseCode") or data.get("ResponseCode", "")
 
-        # Response code "00" means success in Interswitch
-        if data.get("ResponseCode") == "00":
+        if response_code == "00":
             return {
-                "success": True,
                 "verified": True,
-                "amount": data.get("Amount"),
-                "reference": transaction_ref
+                "amount": data.get("amount"),
+                "reference": transaction_ref,
+                "raw": data
             }
-        else:
-            return {
-                "success": True,
-                "verified": False,
-                "response_code": data.get("ResponseCode"),
-                "error": data.get("ResponseDescription", "Transaction not successful")
-            }
+
+        return {
+            "verified": False,
+            "response_code": response_code,
+            "error": data.get("responseDescription", "Transaction not verified"),
+            "raw": data
+        }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"verified": False, "error": str(e)}
 
 
-# ── SANDBOX TEST: Mock response for demo ──
+# ── MOCK (sandbox demo only) ──
 def mock_charge_success(amount_kobo: int, prescription_id: int):
-    """
-    Use this during hackathon demo when real Interswitch
-    credentials aren't available yet.
-    """
     ref = generate_ref(f"mock_{prescription_id}")
     return {
         "success": True,

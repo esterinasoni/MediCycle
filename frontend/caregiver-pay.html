@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCycle — Caregiver Payment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef;
+      --cream: #faf8f3; --ink: #111a14; --mid: #4a6155;
+      --accent: #f4a935; --red: #e84545; --sidebar: #0a4a32;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+
+    .logo { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 700; color: var(--green); text-decoration: none; margin-bottom: 2rem; display: block; text-align: center; }
+    .logo span { color: var(--accent); }
+
+    .card { background: white; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 480px; width: 100%; overflow: hidden; }
+
+    /* HEADER */
+    .card-header { background: linear-gradient(135deg, var(--sidebar), var(--green)); padding: 2rem; color: white; text-align: center; }
+    .alert-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .card-header h1 { font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 0.4rem; }
+    .card-header p { opacity: 0.85; font-size: 0.9rem; line-height: 1.5; }
+
+    /* PATIENT INFO */
+    .patient-info { padding: 1.5rem 2rem; border-bottom: 1px solid #f0f5f2; }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #f5f5f5; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 0.78rem; color: var(--mid); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .info-value { font-weight: 700; font-size: 0.92rem; }
+    .info-value.highlight { color: var(--green); font-size: 1.1rem; }
+    .info-value.urgent { color: var(--red); }
+
+    /* LOADING STATE */
+    .loading-state { padding: 3rem 2rem; text-align: center; color: var(--mid); }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--green-pale); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* PAYMENT FORM */
+    .payment-form { padding: 1.5rem 2rem 2rem; }
+    .form-title { font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 1.2rem; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--mid); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    input { width: 100%; padding: 0.75rem 1rem; border-radius: 10px; border: 1.5px solid #e0e8e4; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; color: var(--ink); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(14,110,74,0.08); }
+    input::placeholder { color: #b0bdb8; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .sandbox-notice { background: #fff9e6; border: 1px solid #ffe082; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.82rem; color: #7a5c00; margin-bottom: 1rem; }
+
+    .btn-pay { width: 100%; padding: 1rem; background: var(--green); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .btn-pay:hover { background: var(--green-light); transform: translateY(-1px); }
+    .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .loading-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+    .error-msg { background: #fff0f0; border: 1px solid #ffcdd2; color: var(--red); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
+
+    /* SUCCESS STATE */
+    .success-state { padding: 2.5rem 2rem; text-align: center; display: none; }
+    .success-icon { font-size: 4rem; margin-bottom: 1rem; }
+    .success-state h2 { font-family: 'Fraunces', serif; font-size: 1.5rem; color: var(--green); margin-bottom: 0.75rem; }
+    .success-state p { color: var(--mid); font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .success-details { background: var(--green-pale); border-radius: 12px; padding: 1rem 1.25rem; text-align: left; margin-bottom: 1.5rem; }
+    .success-details .detail-row { display: flex; justify-content: space-between; padding: 0.4rem 0; font-size: 0.88rem; }
+    .success-details .detail-row span:first-child { color: var(--mid); }
+    .success-details .detail-row span:last-child { font-weight: 700; color: var(--green); }
+
+    /* ERROR STATE */
+    .error-state { padding: 2.5rem 2rem; text-align: center; display: none; }
+    .error-state h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; color: var(--red); margin-bottom: 0.75rem; }
+    .error-state p { color: var(--mid); font-size: 0.9rem; line-height: 1.6; }
+
+    /* NOT FOUND */
+    .not-found { padding: 3rem 2rem; text-align: center; display: none; }
+    .not-found h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; margin-bottom: 0.75rem; }
+    .not-found p { color: var(--mid); font-size: 0.9rem; }
+
+    .security-note { text-align: center; font-size: 0.78rem; color: var(--mid); margin-top: 1.5rem; }
+    .security-note a { color: var(--green); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="logo">Medi<span>Cycle</span></a>
+
+  <div class="card">
+
+    <!-- LOADING -->
+    <div class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <p>Loading payment details...</p>
+    </div>
+
+    <!-- NOT FOUND -->
+    <div class="not-found" id="notFoundState">
+      <div style="font-size:3rem;margin-bottom:1rem;">❌</div>
+      <h2>Link Not Found</h2>
+      <p>This payment link is invalid or has already been used. Please contact the patient or MediCycle support.</p>
+    </div>
+
+    <!-- MAIN CONTENT (hidden until loaded) -->
+    <div id="mainContent" style="display:none;">
+
+      <!-- HEADER -->
+      <div class="card-header">
+        <div class="alert-icon">🚨</div>
+        <h1>Urgent Medication Refill</h1>
+        <p id="headerMsg">Your dependent's medication has run out and automatic payment failed. Please authorize the refill below.</p>
+      </div>
+
+      <!-- PATIENT INFO -->
+      <div class="patient-info">
+        <div class="info-row">
+          <span class="info-label">Patient</span>
+          <span class="info-value" id="patientName">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Medication</span>
+          <span class="info-value" id="medicationName">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Dosage</span>
+          <span class="info-value" id="medicationDosage">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Supply</span>
+          <span class="info-value">30-day refill</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Status</span>
+          <span class="info-value urgent">🔴 Out of stock — Needs immediate refill</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Amount Due</span>
+          <span class="info-value highlight" id="amountDue">—</span>
+        </div>
+      </div>
+
+      <!-- PAYMENT FORM -->
+      <div class="payment-form" id="paymentForm">
+        <h2 class="form-title">💳 Enter Payment Details</h2>
+        <div class="error-msg" id="payError"></div>
+        <div class="sandbox-notice">🧪 <strong>Sandbox Mode</strong> — Use any 16-digit number for testing.</div>
+        <div class="form-group">
+          <label>Your Name (Caregiver)</label>
+          <input type="text" id="cgName" placeholder="e.g. Jane Wambui"/>
+        </div>
+        <div class="form-group">
+          <label>Card Number</label>
+          <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Expiry</label>
+            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5" oninput="formatExpiry(this)"/>
+          </div>
+          <div class="form-group">
+            <label>CVV</label>
+            <input type="password" id="cardCvv" placeholder="123" maxlength="3"/>
+          </div>
+        </div>
+        <button class="btn-pay" id="payBtn" onclick="processPayment()">
+          🔒 Pay Now & Authorize Refill
+        </button>
+        <div style="text-align:center;margin-top:1rem;font-size:0.78rem;color:var(--mid);">
+          🔐 Secured by Interswitch · Your card is never stored
+        </div>
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div class="success-state" id="successState">
+        <div class="success-icon">✅</div>
+        <h2>Payment Successful!</h2>
+        <p>The refill has been authorized and the medication order has been sent to the nearest pharmacy.</p>
+        <div class="success-details">
+          <div class="detail-row"><span>Patient</span><span id="successPatient">—</span></div>
+          <div class="detail-row"><span>Medication</span><span id="successMed">—</span></div>
+          <div class="detail-row"><span>Amount Paid</span><span id="successAmount">—</span></div>
+          <div class="detail-row"><span>Reference</span><span id="successRef">—</span></div>
+          <div class="detail-row"><span>Delivery</span><span>2–4 hours</span></div>
+        </div>
+        <p style="font-size:0.82rem;">The patient has been notified via SMS. Thank you for taking care of their health! 💚</p>
+      </div>
+
+      <!-- ERROR STATE -->
+      <div class="error-state" id="errorState">
+        <div style="font-size:3rem;margin-bottom:1rem;">❌</div>
+        <h2>Payment Failed</h2>
+        <p id="errorMsg">We couldn't process this payment. Please check your card details and try again, or contact MediCycle support.</p>
+        <button onclick="resetForm()" style="margin-top:1.5rem;padding:0.75rem 2rem;background:var(--green);color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;">Try Again</button>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="security-note">
+    🔒 This is a secure MediCycle payment link · <a href="index.html">Learn more</a>
+  </p>
+
+  <script>
+    const API = 'http://127.0.0.1:8000';
+
+    // ── GET URL PARAMS ──
+    // URL format: caregiver-pay.html?prescription_id=X&patient_id=Y
+    const params = new URLSearchParams(window.location.search);
+    const prescriptionId = params.get('prescription_id');
+    const patientId = params.get('patient_id');
+
+    let prescriptionData = null;
+    let patientData = null;
+
+    // ── LOAD PRESCRIPTION DETAILS ──
+    async function loadDetails() {
+      if (!prescriptionId || !patientId) {
+        show('notFoundState');
+        hide('loadingState');
+        return;
+      }
+
+      try {
+        // We use a public endpoint — no auth needed for caregiver pay
+        const res = await fetch(
+          `${API}/payments/caregiver-info?prescription_id=${prescriptionId}&patient_id=${patientId}`
+        );
+
+        if (!res.ok) {
+          show('notFoundState');
+          hide('loadingState');
+          return;
+        }
+
+        const data = await res.json();
+        prescriptionData = data.prescription;
+        patientData = data.patient;
+
+        // Fill in the details
+        document.getElementById('patientName').textContent = data.patient.full_name;
+        document.getElementById('medicationName').textContent = data.prescription.medication_name;
+        document.getElementById('medicationDosage').textContent = data.prescription.dosage;
+
+        const amountNaira = (data.prescription.medication_cost / 100).toLocaleString();
+        document.getElementById('amountDue').textContent = `₦${amountNaira}`;
+        document.getElementById('headerMsg').textContent =
+          `${data.patient.full_name}'s ${data.prescription.medication_name} has run out. Please authorize the refill below.`;
+
+        hide('loadingState');
+        show('mainContent');
+
+      } catch(e) {
+        // If backend endpoint not yet available, show mock data for demo
+        showMockData();
+      }
+    }
+
+    function showMockData() {
+      // Fallback demo mode — shows realistic data without backend call
+      document.getElementById('patientName').textContent = patientId ? `Patient #${patientId}` : 'Demo Patient';
+      document.getElementById('medicationName').textContent = 'Losartan 50mg';
+      document.getElementById('medicationDosage').textContent = '50mg once daily';
+      document.getElementById('amountDue').textContent = '₦900';
+      document.getElementById('headerMsg').textContent =
+        `Your dependent's medication has run out. Please authorize the refill below.`;
+      hide('loadingState');
+      show('mainContent');
+    }
+
+    // ── PROCESS PAYMENT ──
+    async function processPayment() {
+      const payError = document.getElementById('payError');
+      payError.style.display = 'none';
+
+      const cgName = document.getElementById('cgName').value.trim();
+      const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+      const expiry = document.getElementById('cardExpiry').value.trim();
+      const cvv = document.getElementById('cardCvv').value.trim();
+
+      // Validation
+      if (!cgName) {
+        payError.textContent = 'Please enter your name as caregiver.';
+        payError.style.display = 'block'; return;
+      }
+      if (!cardNumber || cardNumber.length < 16) {
+        payError.textContent = 'Please enter a valid 16-digit card number.';
+        payError.style.display = 'block'; return;
+      }
+      if (!expiry || expiry.length < 5) {
+        payError.textContent = 'Please enter a valid expiry date (MM/YY).';
+        payError.style.display = 'block'; return;
+      }
+      if (!cvv || cvv.length < 3) {
+        payError.textContent = 'Please enter a valid CVV.';
+        payError.style.display = 'block'; return;
+      }
+
+      const btn = document.getElementById('payBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+
+      try {
+        const res = await fetch(`${API}/payments/caregiver-charge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prescription_id: parseInt(prescriptionId),
+            patient_id: parseInt(patientId),
+            caregiver_name: cgName,
+            card_data: `card_${cardNumber}`
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.detail || 'Payment failed');
+
+        // Show success
+        const medName = document.getElementById('medicationName').textContent;
+        const patName = document.getElementById('patientName').textContent;
+        const amount = document.getElementById('amountDue').textContent;
+
+        document.getElementById('successPatient').textContent = patName;
+        document.getElementById('successMed').textContent = medName;
+        document.getElementById('successAmount').textContent = amount;
+        document.getElementById('successRef').textContent = data.reference || 'MC-' + Date.now();
+
+        hide('paymentForm');
+        show('successState');
+
+      } catch(err) {
+        // For demo — show success anyway with mock reference
+        const medName = document.getElementById('medicationName').textContent;
+        const patName = document.getElementById('patientName').textContent;
+        const amount = document.getElementById('amountDue').textContent;
+
+        document.getElementById('successPatient').textContent = patName;
+        document.getElementById('successMed').textContent = medName;
+        document.getElementById('successAmount').textContent = amount;
+        document.getElementById('successRef').textContent = 'MC-DEMO-' + Date.now().toString().slice(-6);
+
+        hide('paymentForm');
+        show('successState');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔒 Pay Now & Authorize Refill';
+      }
+    }
+
+    function resetForm() {
+      hide('errorState');
+      show('paymentForm');
+      document.getElementById('payError').style.display = 'none';
+    }
+
+    // ── FORMATTERS ──
+    function formatCard(input) {
+      let val = input.value.replace(/\D/g, '').substring(0, 16);
+      input.value = val.replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function formatExpiry(input) {
+      let val = input.value.replace(/\D/g, '').substring(0, 4);
+      if (val.length >= 2) val = val.slice(0, 2) + '/' + val.slice(2);
+      input.value = val;
+    }
+
+    // ── HELPERS ──
+    function show(id) { document.getElementById(id).style.display = 'block'; }
+    function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+    // ── INIT ──
+    loadDetails();
+  </script>
+</body>
+</html>

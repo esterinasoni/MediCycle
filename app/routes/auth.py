@@ -14,10 +14,8 @@ load_dotenv()
 
 router = APIRouter()
 
-# Password encryption
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# JWT settings
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
@@ -47,6 +45,20 @@ class UpdateLocationRequest(BaseModel):
     address: str
     city: str
     state: str
+    landmark: str = None
+
+class UpdateCaregiverRequest(BaseModel):
+    caregiver_name: str
+    caregiver_phone: str
+
+class UpdateProfileRequest(BaseModel):
+    full_name: str = None
+    phone_number: str = None
+    caregiver_name: str = None
+    caregiver_phone: str = None
+    address: str = None
+    city: str = None
+    state: str = None
     landmark: str = None
 
 # ── HELPER FUNCTIONS ──
@@ -86,23 +98,19 @@ def get_current_user(token: str, db: Session = Depends(get_db)):
 @router.post("/register")
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
 
-    # Check if email already exists
     existing = db.query(User).filter(User.email == request.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Check if phone already exists
     existing_phone = db.query(User).filter(
         User.phone_number == request.phone_number
     ).first()
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already registered")
 
-    # Generate OTP
     otp = generate_otp()
     otp_expiry = datetime.utcnow() + timedelta(minutes=10)
 
-    # Create new user
     new_user = User(
         full_name=request.full_name,
         email=request.email,
@@ -123,8 +131,6 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    # In production: send OTP via SMS
-    # For hackathon demo: return OTP in response
     return {
         "message": "Registration successful! Please verify your OTP.",
         "otp": otp,  # ← remove in production, send via SMS
@@ -146,7 +152,10 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Invalid OTP")
 
     if datetime.utcnow() > user.otp_expiry:
-        raise HTTPException(status_code=400, detail="OTP has expired. Please register again.")
+        raise HTTPException(
+            status_code=400,
+            detail="OTP has expired. Please register again."
+        )
 
     user.is_verified = True
     user.otp_code = None
@@ -179,6 +188,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             "full_name": user.full_name,
             "email": user.email,
             "phone_number": user.phone_number,
+            "caregiver_name": user.caregiver_name,
+            "caregiver_phone": user.caregiver_phone,
             "address": user.address,
             "city": user.city,
             "state": user.state,
@@ -202,7 +213,7 @@ def update_location(
     db.commit()
 
     return {
-        "message": "Location updated successfully!",
+        "message": "Location updated successfully! ✅",
         "delivery_address": {
             "address": user.address,
             "city": user.city,
@@ -228,5 +239,86 @@ def get_profile(token: str, db: Session = Depends(get_db)):
         "state": user.state,
         "landmark": user.landmark,
         "is_verified": user.is_verified,
-        "created_at": user.created_at
+        "created_at": user.created_at,
+        "has_caregiver": bool(user.caregiver_phone),
+        "has_card": bool(user.interswitch_token),
+        "has_delivery_address": bool(user.address and user.city)
     }
+
+# 6. UPDATE CAREGIVER
+@router.put("/update-caregiver")
+def update_caregiver(
+    request: UpdateCaregiverRequest,
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Add or update caregiver details (Req 1.1, 4.3, 7.1)"""
+    user = get_current_user(token, db)
+
+    user.caregiver_name = request.caregiver_name
+    user.caregiver_phone = request.caregiver_phone
+    db.commit()
+
+    return {
+        "message": f"Caregiver {request.caregiver_name} added successfully! ✅",
+        "caregiver": {
+            "name": user.caregiver_name,
+            "phone": mask_phone(user.caregiver_phone)
+        }
+    }
+
+# 7. UPDATE FULL PROFILE
+@router.put("/update-profile")
+def update_profile(
+    request: UpdateProfileRequest,
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Update any profile field"""
+    user = get_current_user(token, db)
+
+    if request.full_name is not None:
+        user.full_name = request.full_name
+    if request.phone_number is not None:
+        # Check phone not taken by another user
+        existing = db.query(User).filter(
+            User.phone_number == request.phone_number,
+            User.id != user.id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Phone number already in use")
+        user.phone_number = request.phone_number
+    if request.caregiver_name is not None:
+        user.caregiver_name = request.caregiver_name
+    if request.caregiver_phone is not None:
+        user.caregiver_phone = request.caregiver_phone
+    if request.address is not None:
+        user.address = request.address
+    if request.city is not None:
+        user.city = request.city
+    if request.state is not None:
+        user.state = request.state
+    if request.landmark is not None:
+        user.landmark = request.landmark
+
+    db.commit()
+
+    return {
+        "message": "Profile updated successfully! ✅",
+        "profile": {
+            "full_name": user.full_name,
+            "phone_number": user.phone_number,
+            "caregiver_name": user.caregiver_name,
+            "caregiver_phone": mask_phone(user.caregiver_phone) if user.caregiver_phone else None,
+            "address": user.address,
+            "city": user.city,
+            "state": user.state,
+            "landmark": user.landmark
+        }
+    }
+
+# ── HELPER ──
+def mask_phone(phone: str) -> str:
+    if not phone or len(phone) < 7:
+        return phone
+    return phone[:3] + "****" + phone[-3:]

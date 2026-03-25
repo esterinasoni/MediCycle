@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MediCycle — Add Medication</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef; --cream: #faf8f3; --ink: #111a14; --mid: #4a6155; --accent: #f4a935; --red: #e84545; --sidebar: #0a4a32; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); display: flex; min-height: 100vh; }
+
+    .sidebar { width: 240px; background: var(--sidebar); color: white; padding: 2rem 1.5rem; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; }
+    .sidebar-logo { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; color: white; text-decoration: none; margin-bottom: 2.5rem; display: block; }
+    .sidebar-logo span { color: var(--accent); }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 10px; color: rgba(255,255,255,0.65); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; margin-bottom: 0.3rem; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.15); color: white; }
+
+    .main { margin-left: 240px; flex: 1; padding: 2rem 2.5rem; max-width: 800px; }
+    .back-btn { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--mid); text-decoration: none; font-size: 0.9rem; margin-bottom: 1.5rem; transition: color 0.2s; }
+    .back-btn:hover { color: var(--green); }
+    .page-title { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .page-sub { color: var(--mid); font-size: 0.95rem; margin-bottom: 2rem; }
+
+    .form-card { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+    .card-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--green); margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--mid); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select {
+      width: 100%; padding: 0.75rem 1rem; border-radius: 12px;
+      border: 1.5px solid #e0e8e4; font-size: 0.95rem;
+      font-family: 'DM Sans', sans-serif; color: var(--ink);
+      background: white; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(14,110,74,0.08); }
+    input::placeholder { color: #b0bdb8; }
+    .hint { font-size: 0.78rem; color: var(--mid); margin-top: 0.3rem; }
+
+    /* AI PARSE */
+    .ai-banner { background: linear-gradient(135deg, #f0faf5, #e8f5ef); border: 1.5px solid #b2dfcc; border-radius: 16px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .ai-icon { font-size: 1.5rem; }
+    .ai-text h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--green); }
+    .ai-text p { font-size: 0.82rem; color: var(--mid); }
+    .btn-ai { background: var(--green); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; white-space: nowrap; }
+    .btn-ai:hover { background: var(--green-light); }
+
+    /* FILE UPLOAD */
+    .file-upload-zone { border: 2px dashed #c8ddd5; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background: white; }
+    .file-upload-zone:hover { border-color: var(--green); background: var(--green-pale); }
+    .file-upload-zone.has-file { border-color: var(--green); background: var(--green-pale); border-style: solid; }
+    .file-upload-zone input[type="file"] { display: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .upload-text { font-size: 0.88rem; color: var(--mid); }
+    .upload-hint { font-size: 0.78rem; color: #aaa; margin-top: 0.3rem; }
+
+    /* DAYS LEFT PREVIEW */
+    .days-preview { background: var(--cream); border-radius: 12px; padding: 1rem 1.2rem; display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
+    .days-label { font-size: 0.85rem; color: var(--mid); }
+    .days-value { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; }
+    .days-value.critical { color: var(--red); }
+    .days-value.warning { color: var(--accent); }
+    .days-value.ok { color: var(--green); }
+
+    .btn-submit { width: 100%; padding: 1rem; background: var(--green); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 1rem; }
+    .btn-submit:hover { background: var(--green-light); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg { background: #fff0f0; border: 1px solid #ffcdd2; color: var(--red); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
+    .success-msg { background: var(--green-pale); border: 1px solid #b2dfcc; color: var(--green); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
+
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 1.5rem; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="sidebar-logo">Medi<span>Cycle</span></a>
+    <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
+    <a href="dashboard.html" class="nav-item">💊 Medications</a>
+    <a href="add-prescription.html" class="nav-item active">➕ Add Medication</a>
+    <a href="payment.html" class="nav-item">💳 Payments</a>
+  </aside>
+
+  <main class="main">
+    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+    <h1 class="page-title">Add Medication</h1>
+    <p class="page-sub">Add a chronic medication to start automated refill tracking.</p>
+
+    <!-- AI BANNER -->
+    <div class="ai-banner">
+      <div class="ai-icon">🤖</div>
+      <div class="ai-text">
+        <h4>AI Prescription Parser</h4>
+        <p>Have a prescription document? Upload it and Gemini AI will fill in the details automatically.</p>
+      </div>
+      <button class="btn-ai" onclick="document.getElementById('aiUploadInput').click()">Upload & Parse</button>
+      <input type="file" id="aiUploadInput" accept="image/*,.pdf" onchange="aiParse(this)"/>
+    </div>
+
+    <div class="error-msg" id="formError"></div>
+    <div class="success-msg" id="formSuccess"></div>
+
+    <!-- MEDICATION DETAILS -->
+    <div class="form-card">
+      <div class="card-title">💊 Medication Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Medication Name *</label>
+          <input type="text" id="medName" placeholder="e.g. Amlodipine" oninput="updatePreview()"/>
+        </div>
+        <div class="form-group">
+          <label>Dosage *</label>
+          <input type="text" id="dosage" placeholder="e.g. 5mg, 500mg"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Daily Frequency *</label>
+          <input type="number" id="frequency" placeholder="e.g. 1, 2, 3" min="0.5" step="0.5" oninput="updatePreview()"/>
+          <p class="hint">Times per day you take this medication</p>
+        </div>
+        <div class="form-group">
+          <label>Total Quantity *</label>
+          <input type="number" id="totalQty" placeholder="e.g. 30, 60, 90" min="0" oninput="updatePreview()"/>
+          <p class="hint">Total pills/units you currently have</p>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Last Refill Date *</label>
+          <input type="date" id="lastRefill"/>
+        </div>
+        <div class="form-group">
+          <label>Medication Cost (₦)</label>
+          <input type="number" id="medCost" placeholder="e.g. 5000"/>
+          <p class="hint">Cost per refill in Naira</p>
+        </div>
+      </div>
+
+      <div id="daysPreview" style="display:none" class="days-preview">
+        <span class="days-label">📅 Estimated days remaining:</span>
+        <span class="days-value ok" id="daysValue">— days</span>
+      </div>
+    </div>
+
+    <!-- EXPIRY DATES -->
+    <div class="form-card">
+      <div class="card-title">📅 Expiry Dates (Optional)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Prescription Expiry Date</label>
+          <input type="date" id="rxExpiry"/>
+          <p class="hint">When the doctor's prescription script expires</p>
+        </div>
+        <div class="form-group">
+          <label>Medication Expiry Date</label>
+          <input type="date" id="medExpiry"/>
+          <p class="hint">When the physical pills expire</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCUMENT UPLOAD -->
+    <div class="form-card">
+      <div class="card-title">📄 Prescription Document</div>
+      <div class="file-upload-zone" id="uploadZone" onclick="document.getElementById('docFile').click()">
+        <input type="file" id="docFile" accept="image/*,.pdf" onchange="handleFileSelect(this)"/>
+        <div class="upload-icon">📋</div>
+        <div class="upload-text" id="uploadText">Click to upload prescription document</div>
+        <div class="upload-hint">JPG, PNG, or PDF · Max 10MB</div>
+      </div>
+      <p class="hint" style="margin-top:0.5rem;">⚠️ Uploading a document activates refill tracking. Without it, tracking won't start.</p>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="savePrescription()">💊 Add Medication & Start Tracking →</button>
+  </main>
+
+  <script>
+    const API = 'http://127.0.0.1:8000';
+    const token = localStorage.getItem('mc_token');
+    if (!token) window.location.href = 'login.html';
+
+    let selectedFile = null;
+    let savedPrescriptionId = null;
+
+    // Set today as default last refill date
+    document.getElementById('lastRefill').value = new Date().toISOString().split('T')[0];
+
+    function updatePreview() {
+      const qty = parseFloat(document.getElementById('totalQty').value);
+      const freq = parseFloat(document.getElementById('frequency').value);
+      if (!qty || !freq || freq <= 0) { document.getElementById('daysPreview').style.display = 'none'; return; }
+      const days = Math.round(qty / freq);
+      const el = document.getElementById('daysValue');
+      el.textContent = `${days} days`;
+      el.className = `days-value ${days <= 3 ? 'critical' : days <= 5 ? 'warning' : 'ok'}`;
+      document.getElementById('daysPreview').style.display = 'flex';
+    }
+
+    function handleFileSelect(input) {
+      if (input.files[0]) {
+        selectedFile = input.files[0];
+        document.getElementById('uploadText').textContent = `✅ ${selectedFile.name}`;
+        document.getElementById('uploadZone').classList.add('has-file');
+      }
+    }
+
+    async function aiParse(input) {
+      if (!input.files[0]) return;
+      const file = input.files[0];
+      // For now show a friendly message - AI parsing via image requires upload
+      alert('🤖 AI parsing feature: Upload the document after saving your medication, then the AI will process it via the prescription document upload endpoint.');
+    }
+
+    async function savePrescription() {
+      const error = document.getElementById('formError');
+      const success = document.getElementById('formSuccess');
+      error.style.display = 'none'; success.style.display = 'none';
+
+      const medName = document.getElementById('medName').value.trim();
+      const dosage = document.getElementById('dosage').value.trim();
+      const frequency = parseFloat(document.getElementById('frequency').value);
+      const totalQty = parseFloat(document.getElementById('totalQty').value);
+      const lastRefill = document.getElementById('lastRefill').value;
+      const medCost = parseFloat(document.getElementById('medCost').value) || null;
+      const rxExpiry = document.getElementById('rxExpiry').value || null;
+      const medExpiry = document.getElementById('medExpiry').value || null;
+
+      if (!medName || !dosage || !frequency || !totalQty || !lastRefill) {
+        error.textContent = 'Please fill in all required fields (*)';
+        error.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>Saving medication...';
+
+      try {
+        // Step 1: Save prescription
+        const res = await fetch(`${API}/prescriptions/add?token=${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            medication_name: medName, dosage, frequency, total_quantity: totalQty,
+            last_refill_date: lastRefill,
+            medication_cost: medCost ? medCost * 100 : null, // convert to kobo
+            prescription_expiry_date: rxExpiry,
+            medication_expiry_date: medExpiry
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Failed to save');
+        savedPrescriptionId = data.prescription.id;
+
+        // Step 2: Upload document if selected
+        if (selectedFile) {
+          btn.innerHTML = '<span class="loading"></span>Uploading document...';
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          await fetch(`${API}/prescriptions/${savedPrescriptionId}/upload-document?token=${token}&prescription_id=${savedPrescriptionId}`, {
+            method: 'POST', body: formData
+          });
+        }
+
+        success.textContent = `✅ ${medName} added successfully! Refill tracking is ${selectedFile ? 'now active' : 'waiting for document upload'}.`;
+        success.style.display = 'block';
+        btn.innerHTML = '✅ Saved! Go to Dashboard →';
+        btn.onclick = () => window.location.href = 'dashboard.html';
+        btn.disabled = false;
+      } catch (err) {
+        error.textContent = err.message;
+        error.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '💊 Add Medication & Start Tracking →';
+      }
+    }
+
+    // Drag & drop
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--green)'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        selectedFile = file;
+        document.getElementById('uploadText').textContent = `✅ ${file.name}`;
+        zone.classList.add('has-file');
+      }
+    });
+  </script>
+</body>
+</html>

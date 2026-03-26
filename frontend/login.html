@@ -18,14 +18,16 @@
     .auth-left h2 { font-family: 'Fraunces', serif; font-size: 1.8rem; line-height: 1.25; margin-bottom: 1rem; position: relative; z-index: 1; }
     .auth-left h2 em { font-style: italic; color: #4fd99b; }
     .auth-left p { opacity: 0.7; line-height: 1.7; font-size: 0.9rem; position: relative; z-index: 1; }
-    .mini-card { background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.2rem; margin-top: 2rem; position: relative; z-index: 1; }
-    .mini-card-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .mini-card-row:last-child { border-bottom: none; }
-    .mini-card-row span:first-child { opacity: 0.7; }
-    .mini-card-row span:last-child { font-weight: 600; }
+    .med-card { background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.2rem; margin-top: 2rem; position: relative; z-index: 1; }
+    .med-card-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .med-card-row:last-child { border-bottom: none; }
+    .med-card-row span:first-child { opacity: 0.7; }
+    .med-card-row span:last-child { font-weight: 600; }
     .tag-green { color: #4fd99b; }
     .tag-yellow { color: var(--accent); }
     .tag-red { color: #ff6b6b; }
+    .loading-meds { text-align: center; padding: 1rem; font-size: 0.8rem; opacity: 0.6; }
+    .error-meds { text-align: center; padding: 1rem; font-size: 0.8rem; color: #ff6b6b; }
 
     .auth-right { padding: 3rem; }
     .auth-right h3 { font-family: 'Fraunces', serif; font-size: 1.8rem; margin-bottom: 0.4rem; }
@@ -61,10 +63,8 @@
         <a href="index.html" class="logo">Medi<span>Cycle</span></a>
         <h2>Your medications.<br/><em>Always on time.</em></h2>
         <p>MediCycle monitors your supply daily and acts before you run out.</p>
-        <div class="mini-card">
-          <div class="mini-card-row"><span>Amlodipine 5mg</span><span class="tag-green">✅ 18 days</span></div>
-          <div class="mini-card-row"><span>Metformin 500mg</span><span class="tag-yellow">⚠️ 4 days</span></div>
-          <div class="mini-card-row"><span>Lisinopril 10mg</span><span class="tag-red">🔴 Auto-charging</span></div>
+        <div class="med-card" id="medPreview">
+          <div class="loading-meds">Loading medication examples...</div>
         </div>
       </div>
       <p style="font-size:0.8rem; opacity:0.4;">Secured by Interswitch · Powered by Gemini AI</p>
@@ -91,6 +91,82 @@
 
   <script>
     const API = 'http://127.0.0.1:8000';
+    let rotateInterval;
+
+    // Fetch sample medications from backend
+    async function fetchSampleMedications() {
+      const medPreview = document.getElementById('medPreview');
+      medPreview.innerHTML = '<div class="loading-meds">Loading medication examples...</div>';
+      
+      try {
+        const res = await fetch(`${API}/prescriptions/sample-medications`);
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch sample medications');
+        }
+        
+        const data = await res.json();
+        
+        if (data.medications && data.medications.length > 0) {
+          updateMedicationDisplay(data.medications);
+          // Rotate to new random medications every 5 seconds
+          if (rotateInterval) clearInterval(rotateInterval);
+          rotateInterval = setInterval(async () => {
+            const newRes = await fetch(`${API}/prescriptions/sample-medications`);
+            if (newRes.ok) {
+              const newData = await newRes.json();
+              updateMedicationDisplay(newData.medications);
+            }
+          }, 5000);
+        } else {
+          throw new Error('No medications found');
+        }
+        
+      } catch (error) {
+        console.error('Error fetching sample medications:', error);
+        medPreview.innerHTML = `
+          <div class="error-meds">
+            ⚠️ Could not load examples<br/>
+            <small>Check your connection</small>
+          </div>
+        `;
+        // Fallback to local examples if backend fails
+        useLocalFallback();
+      }
+    }
+    
+    function updateMedicationDisplay(medications) {
+      const medPreview = document.getElementById('medPreview');
+      
+      if (!medications || medications.length === 0) {
+        medPreview.innerHTML = '<div class="loading-meds">No examples available</div>';
+        return;
+      }
+      
+      medPreview.innerHTML = medications.map(med => `
+        <div class="med-card-row">
+          <span>${med.name || med.medication_name} ${med.dosage || ''}</span>
+          <span class="${med.tag_class}">${med.tag} ${med.message}</span>
+        </div>
+      `).join('');
+    }
+    
+    function useLocalFallback() {
+      // Fallback medication examples in case backend is not available
+      const fallbackMeds = [
+        { name: "Amlodipine 5mg", tag: "✅", message: "18 days", tag_class: "tag-green" },
+        { name: "Metformin 500mg", tag: "⚠️", message: "4 days", tag_class: "tag-yellow" },
+        { name: "Lisinopril 10mg", tag: "🔴", message: "Auto-charging", tag_class: "tag-red" }
+      ];
+      
+      const medPreview = document.getElementById('medPreview');
+      medPreview.innerHTML = fallbackMeds.map(med => `
+        <div class="med-card-row">
+          <span>${med.name}</span>
+          <span class="${med.tag_class}">${med.tag} ${med.message}</span>
+        </div>
+      `).join('');
+    }
 
     // Show verified banner if coming from registration
     if (new URLSearchParams(window.location.search).get('verified') === '1') {
@@ -102,7 +178,11 @@
       error.style.display = 'none';
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
-      if (!email || !password) { error.textContent = 'Please enter email and password.'; error.style.display = 'block'; return; }
+      if (!email || !password) { 
+        error.textContent = 'Please enter email and password.'; 
+        error.style.display = 'block'; 
+        return; 
+      }
 
       const btn = document.getElementById('loginBtn');
       btn.disabled = true;
@@ -116,8 +196,13 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Login failed');
+        
         localStorage.setItem('mc_token', data.access_token);
-        localStorage.setItem('mc_user', JSON.stringify({ email }));
+        localStorage.setItem('mc_user', JSON.stringify({ 
+          email, 
+          name: data.user?.full_name || '',
+          id: data.user?.id
+        }));
         window.location.href = 'dashboard.html';
       } catch (err) {
         error.textContent = err.message;
@@ -127,7 +212,15 @@
       }
     }
 
+    // Start fetching sample medications
+    fetchSampleMedications();
+
     document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+    
+    // Cleanup interval on page unload
+    window.addEventListener('beforeunload', () => {
+      if (rotateInterval) clearInterval(rotateInterval);
+    });
   </script>
 </body>
 </html>

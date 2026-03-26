@@ -99,6 +99,9 @@
     .view { display: none; }
     .view.active { display: block; }
 
+    /* Current time display */
+    .current-time { font-size: 0.85rem; color: var(--mid); margin-left: 1rem; display: inline-block; }
+
     @media (max-width: 900px) {
       .sidebar { width: 60px; padding: 1.5rem 0.5rem; }
       .sidebar-logo { font-size: 1rem; text-align: center; }
@@ -106,6 +109,7 @@
       .user-info, .user-name, .user-email { display: none; }
       .main { margin-left: 60px; padding: 1.5rem; }
       .stat-grid { grid-template-columns: 1fr 1fr; }
+      .current-time { display: none; }
     }
   </style>
 </head>
@@ -139,7 +143,7 @@
     <div class="view active" id="viewDashboard">
       <div class="topbar">
         <div>
-          <h1 class="page-title">Good morning 👋</h1>
+          <h1 class="page-title" id="pageTitle">Good morning 🌅</h1>
           <p class="page-sub" id="dashSubtitle">Here's your medication overview</p>
         </div>
         <a href="add-prescription.html" class="btn-add">+ Add Medication</a>
@@ -240,6 +244,55 @@
     if (!token) window.location.href = 'login.html';
 
     let prescriptions = [];
+
+    // ========== TIME-BASED GREETING FUNCTION ==========
+    function getTimeBasedGreeting() {
+      const hour = new Date().getHours();
+      
+      if (hour >= 5 && hour < 12) {
+        return {
+          greeting: "Good morning",
+          icon: "🌅",
+          message: "Start your day with your medications"
+        };
+      } else if (hour >= 12 && hour < 17) {
+        return {
+          greeting: "Good afternoon",
+          icon: "☀️",
+          message: "Keep up with your medication schedule"
+        };
+      } else if (hour >= 17 && hour < 22) {
+        return {
+          greeting: "Good evening",
+          icon: "🌙",
+          message: "Check your evening medications"
+        };
+      } else {
+        return {
+          greeting: "Good night",
+          icon: "🌙✨",
+          message: "Don't forget your bedtime medications"
+        };
+      }
+    }
+
+    // ========== UPDATE GREETING DISPLAY ==========
+    function updateGreeting() {
+      const timeGreeting = getTimeBasedGreeting();
+      const pageTitle = document.getElementById('pageTitle');
+      const dashSubtitle = document.getElementById('dashSubtitle');
+      const firstName = document.getElementById('sidebarName')?.textContent.split(' ')[0] || '';
+      
+      if (pageTitle) {
+        pageTitle.innerHTML = `${timeGreeting.greeting} ${timeGreeting.icon}`;
+      }
+      
+      if (dashSubtitle && firstName) {
+        dashSubtitle.innerHTML = `${timeGreeting.message}, ${firstName}! Here's your medication overview`;
+      } else if (dashSubtitle) {
+        dashSubtitle.innerHTML = `${timeGreeting.message}! Here's your medication overview`;
+      }
+    }
 
     function showView(name) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -348,18 +401,25 @@
         if (!res.ok) { logout(); return; }
         const data = await res.json();
         const name = data.full_name || 'Patient';
+        const firstName = name.split(' ')[0];
+        
         document.getElementById('sidebarName').textContent = name;
         document.getElementById('sidebarEmail').textContent = data.email || '';
         document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
-        document.getElementById('dashSubtitle').textContent = `Welcome back, ${name.split(' ')[0]}!`;
+        
+        // Update time-based greeting
+        updateGreeting();
+        
         document.getElementById('profileName').textContent = data.full_name || '—';
         document.getElementById('profileEmail').textContent = data.email || '—';
         document.getElementById('profilePhone').textContent = data.phone_number || '—';
         document.getElementById('profileStatus').textContent = data.is_verified ? '✅ Verified' : '⚠️ Unverified';
+        
         if (data.address) document.getElementById('addrStreet').value = data.address;
         if (data.city) document.getElementById('addrCity').value = data.city;
         if (data.state) document.getElementById('addrState').value = data.state;
         if (data.landmark) document.getElementById('addrLandmark').value = data.landmark;
+        
         if (data.caregiver_name || data.caregiver_phone) {
           document.getElementById('caregiverDisplay').innerHTML = `<div style="background:var(--green-pale);border-radius:10px;padding:0.8rem 1rem;margin-bottom:1rem;"><div style="font-size:0.72rem;color:var(--mid);text-transform:uppercase;font-weight:600;margin-bottom:0.4rem;">Current Caregiver</div><div style="font-weight:700;">${data.caregiver_name || '—'}</div><div style="font-size:0.82rem;color:var(--mid);">${data.caregiver_phone || '—'}</div></div>`;
           if (data.caregiver_name) document.getElementById('cgName').value = data.caregiver_name;
@@ -367,11 +427,15 @@
         } else {
           document.getElementById('caregiverDisplay').innerHTML = `<div style="background:#fff9e6;border:1px solid #ffe082;border-radius:10px;padding:0.8rem 1rem;margin-bottom:1rem;font-size:0.82rem;color:#7a5c00;">⚠️ No caregiver added yet.</div>`;
         }
+        
         if (data.is_verified) document.getElementById('chk1').textContent = '✅';
         if (data.has_card) document.getElementById('chk2').textContent = '✅';
         if (data.has_delivery_address) document.getElementById('chk3').textContent = '✅';
         if (data.has_caregiver) document.getElementById('chk4').textContent = '✅';
-      } catch(e) {}
+        
+      } catch(e) {
+        console.error('Error loading profile:', e);
+      }
     }
 
     async function saveCaregiver() {
@@ -450,17 +514,28 @@
             </div>
             <div style="display:flex;gap:0.5rem;align-items:center;">
               <span style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:${t.status==='success'?'var(--green-pale)':'#fff0cc'};color:${t.status==='success'?'var(--green)':'#b87a00'};font-weight:600;">${t.status}</span>
-              <span style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:#e8f0ff;color:#4a6dd9;font-weight:600;">🚚 ${t.delivery_status}</span>
+              <span style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:#e8f0ff;color:#4a6dd9;font-weight:600;">🚚 ${t.delivery_status || 'preparing'}</span>
               <a href="track.html?id=${t.id}" style="font-size:0.78rem;padding:0.3rem 0.7rem;border-radius:20px;background:var(--green-pale);color:var(--green);font-weight:600;text-decoration:none;">Track →</a>
             </div>
           </div>`).join('');
       } catch(e) {}
     }
 
+    // Start greeting updater (checks every hour)
+    function startGreetingUpdater() {
+      // Update immediately
+      updateGreeting();
+      // Then update every hour
+      setInterval(() => {
+        updateGreeting();
+      }, 3600000); // 1 hour
+    }
+
     // Init
     loadProfile();
     loadDashboard();
     loadAdherence();
+    startGreetingUpdater();
     setInterval(() => { loadDashboard(); loadAdherence(); }, 30000);
   </script>
 </body>

@@ -167,99 +167,86 @@
     function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
     function hideError(id) { document.getElementById(id).style.display = 'none'; }
 
-    async function register() {
-      hideError('regError'); hideError('regSuccess');
-      const btn = document.getElementById('registerBtn');
-      const fullName = document.getElementById('fullName').value.trim();
-      const phone = document.getElementById('phone').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
+   async function register() {
+    hideError('regError'); 
+    hideError('regSuccess');
+    
+    const btn = document.getElementById('registerBtn');
+    const fullName = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
 
-      if (!fullName || !phone || !email || !password) {
+    if (!fullName || !phone || !email || !password) {
         return showError('regError', 'Please fill in all required fields.');
-      }
-      if (password.length < 6) {
+    }
+    
+    if (password.length < 6) {
         return showError('regError', 'Password must be at least 6 characters.');
-      }
+    }
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span>Creating account...';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span>Creating account...';
 
-      try {
+    try {
         const res = await fetch(`${API}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            full_name: fullName, phone_number: phone, email, password,
-            address: document.getElementById('address').value || null,
-            city: document.getElementById('city').value || null,
-            state: document.getElementById('state').value || null,
-            landmark: document.getElementById('landmark').value || null,
-            caregiver_name: document.getElementById('caregiverName').value || null,
-            caregiver_phone: document.getElementById('caregiverPhone').value || null,
-          })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                full_name: fullName,
+                phone_number: phone,
+                email: email,
+                password: password,
+                address: document.getElementById('address').value.trim() || null,
+                city: document.getElementById('city').value.trim() || null,
+                state: document.getElementById('state').value.trim() || null,
+                landmark: document.getElementById('landmark').value.trim() || null,
+                caregiver_name: document.getElementById('caregiverName').value.trim() || null,
+                caregiver_phone: document.getElementById('caregiverPhone').value.trim() || null,
+            })
         });
+        
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Registration failed');
+        
+        if (!res.ok) {
+            throw new Error(data.detail || 'Registration failed');
+        }
 
+        // Store email and show OTP step
         registeredEmail = email;
         document.getElementById('otpEmail').textContent = email;
         document.getElementById('registerStep').style.display = 'none';
         document.getElementById('otpStep').style.display = 'block';
-        document.getElementById('o1').focus();
-
-        // In dev mode, show the OTP
-        if (data.otp) {
-          const hint = document.createElement('div');
-          hint.style.cssText = 'background:#e8f5ef;border-radius:8px;padding:0.6rem 1rem;font-size:0.82rem;color:#0e6e4a;margin-bottom:1rem;text-align:center;';
-          hint.textContent = `🧪 Dev Mode — Your OTP: ${data.otp}`;
-          document.getElementById('otpStep').insertBefore(hint, document.getElementById('otpBtn'));
-        }
-      } catch (err) {
+        
+        // Show success message about email
+        const otpStep = document.getElementById('otpStep');
+        
+        // Remove any existing info messages
+        const existingInfo = otpStep.querySelector('.email-info');
+        if (existingInfo) existingInfo.remove();
+        
+        const infoMsg = document.createElement('div');
+        infoMsg.className = 'email-info';
+        infoMsg.style.cssText = 'background:#e8f5ef;border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;color:#0e6e4a;text-align:center;';
+        infoMsg.innerHTML = '📧 We\'ve sent a verification code to your email. Please check your inbox (and spam folder).';
+        otpStep.insertBefore(infoMsg, otpStep.firstChild);
+        
+        // Focus on first OTP input
+        setTimeout(() => document.getElementById('o1').focus(), 100);
+        
+        // Remove any dev mode OTP display
+        const existingHint = document.querySelector('.dev-hint');
+        if (existingHint) existingHint.remove();
+        
+        showSuccess('regSuccess', data.message);
+        
+    } catch (err) {
         showError('regError', err.message);
-      } finally {
+    } finally {
         btn.disabled = false;
         btn.innerHTML = 'Create Account →';
-      }
     }
-
-    function otpNext(el, nextId) {
-      if (el.value.length === 1 && nextId) {
-        document.getElementById(nextId).focus();
-      }
-    }
-
-    async function verifyOtp() {
-      hideError('otpError');
-      const otp = ['o1','o2','o3','o4','o5','o6'].map(id => document.getElementById(id).value).join('');
-      if (otp.length < 6) return showError('otpError', 'Please enter the full 6-digit code.');
-
-      const btn = document.getElementById('otpBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span>Verifying...';
-
-      try {
-        const res = await fetch(`${API}/auth/verify-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: registeredEmail, otp_code: otp })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Verification failed');
-        window.location.href = 'login.html?verified=1';
-      } catch (err) {
-        showError('otpError', err.message);
-        btn.disabled = false;
-        btn.innerHTML = 'Verify & Continue →';
-      }
-    }
-
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        if (document.getElementById('registerStep').style.display !== 'none') register();
-        else verifyOtp();
-      }
-    });
+}
   </script>
 </body>
 </html>

@@ -39,12 +39,23 @@
     .hint { font-size: 0.78rem; color: var(--mid); margin-top: 0.3rem; }
 
     /* AI PARSE */
-    .ai-banner { background: linear-gradient(135deg, #f0faf5, #e8f5ef); border: 1.5px solid #b2dfcc; border-radius: 16px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; }
+    .ai-banner { background: linear-gradient(135deg, #f0faf5, #e8f5ef); border: 1.5px solid #b2dfcc; border-radius: 16px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .ai-icon { font-size: 1.5rem; }
+    .ai-text { flex: 1; }
     .ai-text h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--green); }
     .ai-text p { font-size: 0.82rem; color: var(--mid); }
     .btn-ai { background: var(--green); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background 0.2s; white-space: nowrap; }
     .btn-ai:hover { background: var(--green-light); }
+    .btn-ai:disabled { opacity: 0.6; cursor: not-allowed; }
+    #aiUploadInput { display: none; }
+
+    /* AI RESULT PREVIEW */
+    .ai-preview { margin-top: 1rem; background: white; border-radius: 12px; padding: 1rem; border: 1px solid #b2dfcc; display: none; }
+    .ai-preview h4 { font-size: 0.85rem; color: var(--green); margin-bottom: 0.5rem; }
+    .ai-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; }
+    .ai-preview-item { padding: 0.25rem; }
+    .ai-preview-label { font-weight: 600; color: var(--mid); }
+    .ai-preview-value { color: var(--ink); }
 
     /* FILE UPLOAD */
     .file-upload-zone { border: 2px dashed #c8ddd5; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background: white; }
@@ -54,6 +65,9 @@
     .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
     .upload-text { font-size: 0.88rem; color: var(--mid); }
     .upload-hint { font-size: 0.78rem; color: #aaa; margin-top: 0.3rem; }
+    .upload-progress { margin-top: 0.5rem; display: none; }
+    .progress-bar { height: 4px; background: #e0e8e4; border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--green); width: 0%; transition: width 0.3s; }
 
     /* DAYS LEFT PREVIEW */
     .days-preview { background: var(--cream); border-radius: 12px; padding: 1rem 1.2rem; display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
@@ -98,10 +112,18 @@
       <div class="ai-icon">🤖</div>
       <div class="ai-text">
         <h4>AI Prescription Parser</h4>
-        <p>Have a prescription document? Upload it and Gemini AI will fill in the details automatically.</p>
+        <p>Upload a prescription image or PDF, and AI will auto-fill the medication details for you.</p>
       </div>
-      <button class="btn-ai" onclick="document.getElementById('aiUploadInput').click()">Upload & Parse</button>
-      <input type="file" id="aiUploadInput" accept="image/*,.pdf" onchange="aiParse(this)"/>
+      <button class="btn-ai" id="aiParseBtn" onclick="triggerAIParse()">📸 Upload & Parse</button>
+      <input type="file" id="aiUploadInput" accept="image/*,.pdf" onchange="aiParseDocument(this)"/>
+    </div>
+
+    <!-- AI Result Preview -->
+    <div id="aiPreview" class="ai-preview">
+      <h4>🤖 AI Extracted Information</h4>
+      <div class="ai-preview-grid" id="aiPreviewGrid"></div>
+      <button onclick="applyAIPreview()" style="margin-top:0.75rem;padding:0.4rem 0.8rem;background:var(--green);color:white;border:none;border-radius:6px;font-size:0.78rem;cursor:pointer;">Apply to Form</button>
+      <button onclick="hideAIPreview()" style="margin-top:0.75rem;margin-left:0.5rem;padding:0.4rem 0.8rem;background:#f0f0f0;border:none;border-radius:6px;font-size:0.78rem;cursor:pointer;">Cancel</button>
     </div>
 
     <div class="error-msg" id="formError"></div>
@@ -175,6 +197,9 @@
         <div class="upload-icon">📋</div>
         <div class="upload-text" id="uploadText">Click to upload prescription document</div>
         <div class="upload-hint">JPG, PNG, or PDF · Max 10MB</div>
+        <div id="uploadProgress" class="upload-progress">
+          <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        </div>
       </div>
       <p class="hint" style="margin-top:0.5rem;">⚠️ Uploading a document activates refill tracking. Without it, tracking won't start.</p>
     </div>
@@ -189,6 +214,7 @@
 
     let selectedFile = null;
     let savedPrescriptionId = null;
+    let aiExtractedData = null;
 
     // Set today as default last refill date
     document.getElementById('lastRefill').value = new Date().toISOString().split('T')[0];
@@ -196,7 +222,10 @@
     function updatePreview() {
       const qty = parseFloat(document.getElementById('totalQty').value);
       const freq = parseFloat(document.getElementById('frequency').value);
-      if (!qty || !freq || freq <= 0) { document.getElementById('daysPreview').style.display = 'none'; return; }
+      if (!qty || !freq || freq <= 0) { 
+        document.getElementById('daysPreview').style.display = 'none'; 
+        return; 
+      }
       const days = Math.round(qty / freq);
       const el = document.getElementById('daysValue');
       el.textContent = `${days} days`;
@@ -212,17 +241,156 @@
       }
     }
 
-    async function aiParse(input) {
-      if (!input.files[0]) return;
-      const file = input.files[0];
-      // For now show a friendly message - AI parsing via image requires upload
-      alert('🤖 AI parsing feature: Upload the document after saving your medication, then the AI will process it via the prescription document upload endpoint.');
+    // Trigger AI parse upload
+    function triggerAIParse() {
+      document.getElementById('aiUploadInput').click();
+    }
+
+    // AI Parse Document - FIXED VERSION
+    // AI Parse Document
+async function aiParseDocument(input) {
+    if (!input.files || !input.files[0]) return;
+    
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('file', file);  // Field name must match backend parameter
+    
+    const aiBtn = document.getElementById('aiParseBtn');
+    const originalText = aiBtn.textContent;
+    aiBtn.disabled = true;
+    aiBtn.textContent = '🤖 Processing...';
+    
+    const errorDiv = document.getElementById('formError');
+    errorDiv.style.display = 'none';
+    
+    try {
+        // Use the new file upload endpoint
+        const res = await fetch(`${API}/prescriptions/ai-parse-file?token=${token}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+            throw new Error(data.detail || 'AI parsing failed');
+        }
+        
+        // Store extracted data
+        aiExtractedData = data.extracted_data;
+        
+        // Show preview
+        showAIPreview(aiExtractedData);
+        
+        showSuccess('✅ AI extracted medication information! Review and apply below.');
+        
+    } catch (err) {
+        console.error('AI Parse Error:', err);
+        showError(`AI Parsing Error: ${err.message}`);
+    } finally {
+        aiBtn.disabled = false;
+        aiBtn.textContent = originalText;
+        input.value = ''; // Reset file input
+    }
+}
+    function showAIPreview(data) {
+      const previewDiv = document.getElementById('aiPreview');
+      const grid = document.getElementById('aiPreviewGrid');
+      
+      let html = '';
+      
+      if (data.medication_name) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Medication:</span> <span class="ai-preview-value">${data.medication_name}</span></div>`;
+      }
+      if (data.dosage) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Dosage:</span> <span class="ai-preview-value">${data.dosage}</span></div>`;
+      }
+      if (data.frequency) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Frequency:</span> <span class="ai-preview-value">${data.frequency}× daily</span></div>`;
+      }
+      if (data.total_quantity) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Quantity:</span> <span class="ai-preview-value">${data.total_quantity} units</span></div>`;
+      }
+      if (data.medication_cost) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Cost:</span> <span class="ai-preview-value">₦${data.medication_cost}</span></div>`;
+      }
+      if (data.prescription_expiry_date) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Prescription Expiry:</span> <span class="ai-preview-value">${data.prescription_expiry_date}</span></div>`;
+      }
+      if (data.medication_expiry_date) {
+        html += `<div class="ai-preview-item"><span class="ai-preview-label">Medication Expiry:</span> <span class="ai-preview-value">${data.medication_expiry_date}</span></div>`;
+      }
+      
+      if (html === '') {
+        html = '<div class="ai-preview-item">No medication information detected. Please fill manually.</div>';
+      }
+      
+      grid.innerHTML = html;
+      previewDiv.style.display = 'block';
+      
+      // Scroll to preview
+      previewDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function applyAIPreview() {
+      if (!aiExtractedData) return;
+      
+      if (aiExtractedData.medication_name) {
+        document.getElementById('medName').value = aiExtractedData.medication_name;
+      }
+      if (aiExtractedData.dosage) {
+        document.getElementById('dosage').value = aiExtractedData.dosage;
+      }
+      if (aiExtractedData.frequency) {
+        document.getElementById('frequency').value = aiExtractedData.frequency;
+      }
+      if (aiExtractedData.total_quantity) {
+        document.getElementById('totalQty').value = aiExtractedData.total_quantity;
+      }
+      if (aiExtractedData.medication_cost) {
+        document.getElementById('medCost').value = aiExtractedData.medication_cost;
+      }
+      if (aiExtractedData.prescription_expiry_date) {
+        document.getElementById('rxExpiry').value = aiExtractedData.prescription_expiry_date;
+      }
+      if (aiExtractedData.medication_expiry_date) {
+        document.getElementById('medExpiry').value = aiExtractedData.medication_expiry_date;
+      }
+      
+      // Update preview
+      updatePreview();
+      
+      // Hide preview
+      hideAIPreview();
+      
+      // Show success message
+      showSuccess('✅ AI data applied to form!');
+    }
+    
+    function hideAIPreview() {
+      document.getElementById('aiPreview').style.display = 'none';
+      aiExtractedData = null;
+    }
+    
+    function showError(message) {
+      const errorDiv = document.getElementById('formError');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+    
+    function showSuccess(message) {
+      const successDiv = document.getElementById('formSuccess');
+      successDiv.textContent = message;
+      successDiv.style.display = 'block';
+      setTimeout(() => successDiv.style.display = 'none', 5000);
     }
 
     async function savePrescription() {
       const error = document.getElementById('formError');
       const success = document.getElementById('formSuccess');
-      error.style.display = 'none'; success.style.display = 'none';
+      error.style.display = 'none'; 
+      success.style.display = 'none';
 
       const medName = document.getElementById('medName').value.trim();
       const dosage = document.getElementById('dosage').value.trim();
@@ -234,8 +402,7 @@
       const medExpiry = document.getElementById('medExpiry').value || null;
 
       if (!medName || !dosage || !frequency || !totalQty || !lastRefill) {
-        error.textContent = 'Please fill in all required fields (*)';
-        error.style.display = 'block';
+        showError('Please fill in all required fields (*)');
         return;
       }
 
@@ -249,35 +416,55 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            medication_name: medName, dosage, frequency, total_quantity: totalQty,
+            medication_name: medName, 
+            dosage, 
+            frequency, 
+            total_quantity: totalQty,
             last_refill_date: lastRefill,
             medication_cost: medCost ? medCost * 100 : null, // convert to kobo
             prescription_expiry_date: rxExpiry,
             medication_expiry_date: medExpiry
           })
         });
+        
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Failed to save');
+        
         savedPrescriptionId = data.prescription.id;
 
         // Step 2: Upload document if selected
         if (selectedFile) {
           btn.innerHTML = '<span class="loading"></span>Uploading document...';
+          
+          // Show progress bar
+          const progressDiv = document.getElementById('uploadProgress');
+          const progressFill = document.getElementById('progressFill');
+          progressDiv.style.display = 'block';
+          
           const formData = new FormData();
           formData.append('file', selectedFile);
-          await fetch(`${API}/prescriptions/${savedPrescriptionId}/upload-document?token=${token}&prescription_id=${savedPrescriptionId}`, {
-            method: 'POST', body: formData
+          
+          // Upload with progress tracking
+          const uploadRes = await fetch(`${API}/prescriptions/${savedPrescriptionId}/upload-document?token=${token}`, {
+            method: 'POST', 
+            body: formData
           });
+          
+          if (!uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            throw new Error(uploadData.detail || 'Document upload failed');
+          }
+          
+          progressFill.style.width = '100%';
+          setTimeout(() => progressDiv.style.display = 'none', 1000);
         }
 
-        success.textContent = `✅ ${medName} added successfully! Refill tracking is ${selectedFile ? 'now active' : 'waiting for document upload'}.`;
-        success.style.display = 'block';
+        showSuccess(`✅ ${medName} added successfully! ${selectedFile ? 'Document uploaded and tracking is now active.' : 'Add a prescription document to activate refill tracking.'}`);
         btn.innerHTML = '✅ Saved! Go to Dashboard →';
         btn.onclick = () => window.location.href = 'dashboard.html';
-        btn.disabled = false;
+        
       } catch (err) {
-        error.textContent = err.message;
-        error.style.display = 'block';
+        showError(err.message);
         btn.disabled = false;
         btn.innerHTML = '💊 Add Medication & Start Tracking →';
       }
@@ -285,10 +472,16 @@
 
     // Drag & drop
     const zone = document.getElementById('uploadZone');
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--green)'; });
-    zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+    zone.addEventListener('dragover', e => { 
+      e.preventDefault(); 
+      zone.style.borderColor = 'var(--green)'; 
+    });
+    zone.addEventListener('dragleave', () => { 
+      zone.style.borderColor = ''; 
+    });
     zone.addEventListener('drop', e => {
       e.preventDefault();
+      zone.style.borderColor = '';
       const file = e.dataTransfer.files[0];
       if (file) {
         selectedFile = file;

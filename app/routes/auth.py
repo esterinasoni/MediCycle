@@ -9,6 +9,8 @@ from app.models.user import User
 from dotenv import load_dotenv
 import os
 import random
+from app.services.email import send_otp_email
+import asyncio
 
 load_dotenv()
 
@@ -96,8 +98,11 @@ def get_current_user(token: str, db: Session = Depends(get_db)):
 
 # 1. REGISTER
 @router.post("/register")
-def register(request: RegisterRequest, db: Session = Depends(get_db)):
-
+async def register(
+    request: RegisterRequest, 
+    db: Session = Depends(get_db)
+):
+    # Check existing user
     existing = db.query(User).filter(User.email == request.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -108,9 +113,11 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already registered")
 
-    otp = generate_otp()
+    # Generate OTP
+    otp = str(random.randint(100000, 999999))
     otp_expiry = datetime.utcnow() + timedelta(minutes=10)
 
+    # Create user
     new_user = User(
         full_name=request.full_name,
         email=request.email,
@@ -131,9 +138,27 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
+    # Send OTP via email
+    try:
+        first_name = request.full_name.split()[0] if request.full_name else None
+        await send_otp_email(
+            email=request.email,
+            otp_code=otp,
+            name=first_name
+        )
+        print(f"✅ OTP email sent to {request.email}")
+    except Exception as e:
+        print(f"❌ Failed to send OTP email: {e}")
+        # In production, you might want to retry or log this
+        # For now, we'll still return success but user won't get email
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send verification email. Please try again."
+        )
+
+    # Return success WITHOUT OTP in response (security)
     return {
-        "message": "Registration successful! Please verify your OTP.",
-        "otp": otp,  # ← remove in production, send via SMS
+        "message": "Registration successful! Please check your email for the verification code.",
         "email": new_user.email
     }
 
@@ -163,6 +188,47 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Account verified successfully! You can now log in."}
+@router.post("/resend-otp")
+async def resend_otp(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """Resend OTP verification code"""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_verified:
+        raise HTTPException(status_code=400, detail="Account already verified")
+    
+    # Rate limiting (optional)
+    # Check last OTP request time
+    if user.last_otp_request:
+        time_since_last = datetime.utcnow() - user.last_otp_request
+        if time_since_last.total_seconds() < 60:  # 1 minute cooldown
+            raise HTTPException(
+                status_code=429,
+                detail="Please wait 1 minute before requesting another code"
+            )
+    
+    # Generate new OTP
+    new_otp = str(random.randint(100000, 999999))
+    user.otp_code = new_otp
+    user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
+    user.last_otp_request = datetime.utcnow()
+    db.commit()
+    
+    # Send email
+    try:
+        first_name = user.full_name.split()[0] if user.full_name else None
+        await send_otp_email(email, new_otp, first_name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to send verification email. Please try again."
+        )
+    
+    return {"message": "New verification code sent to your email"}
 
 # 3. LOGIN
 @router.post("/login")

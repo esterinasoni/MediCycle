@@ -338,28 +338,127 @@ def delete_prescription(
 
 
 # 7. PARSE PRESCRIPTION TEXT WITH AI
-@router.post("/ai-parse")
-def ai_parse_prescription(
+# 7a. PARSE PRESCRIPTION FROM TEXT
+@router.post("/ai-parse-text")
+def ai_parse_prescription_text(
     text: str,
     token: str,
     db: Session = Depends(get_db)
 ):
+    """Parse prescription from typed text"""
     user = get_current_user(token, db)
-
+    
+    from app.services.gemini import parse_prescription_text
+    
     result = parse_prescription_text(text)
-
+    
     if not result["success"]:
         raise HTTPException(
             status_code=400,
             detail=f"AI parsing failed: {result['error']}"
         )
-
+    
     return {
+        "success": True,
         "message": "Prescription parsed successfully! ✅",
-        "parsed_data": result["data"],
+        "extracted_data": result["data"],
         "note": "Please review and confirm before saving."
     }
 
+
+# 7b. PARSE PRESCRIPTION FROM FILE (Image/PDF)
+@router.post("/ai-parse-file")
+async def ai_parse_prescription_file(
+    token: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Parse prescription from uploaded image or PDF"""
+    user = get_current_user(token, db)
+    
+    from app.services.gemini import parse_prescription_image, parse_prescription_text
+    import tempfile
+    import os
+    import PyPDF2
+    from io import BytesIO
+    
+    try:
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/png", "image/jpg", "application/pdf"]
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed: JPG, PNG, PDF. Got: {file.content_type}"
+            )
+        
+        # Read file content
+        content = await file.read()
+        
+        # Validate file size (max 10MB)
+        if len(content) > 10 * 1024 * 1024:
+            raise HTTPException(
+                status_code=400,
+                detail="File size must be less than 10MB"
+            )
+        
+        # Process based on file type
+        if file.content_type.startswith('image/'):
+            # Save image temporarily
+            suffix = f".{file.filename.split('.')[-1]}"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                tmp_file.write(content)
+                tmp_path = tmp_file.name
+            
+            try:
+                result = parse_prescription_image(tmp_path)
+            finally:
+                os.unlink(tmp_path)
+                
+        else:  # PDF
+            pdf_reader = PyPDF2.PdfReader(BytesIO(content))
+            text = ""
+            for page in pdf_reader.pages:
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
+            
+            if not text.strip():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Could not extract text from PDF. Please ensure it's not a scanned image."
+                )
+            
+            result = parse_prescription_text(text)
+        
+        if not result.get("success"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"AI parsing failed: {result.get('error', 'Unknown error')}"
+            )
+        
+        extracted_data = result.get("data", {})
+        
+        return {
+            "success": True,
+            "message": "Prescription parsed successfully! ✅",
+            "extracted_data": {
+                "medication_name": extracted_data.get("medication_name"),
+                "dosage": extracted_data.get("dosage"),
+                "frequency": extracted_data.get("frequency"),
+                "total_quantity": extracted_data.get("total_quantity"),
+                "duration_days": extracted_data.get("duration_days"),
+                "instructions": extracted_data.get("instructions"),
+                "doctor_name": extracted_data.get("doctor_name"),
+                "prescription_date": extracted_data.get("prescription_date")
+            },
+            "note": "Please review the extracted information and confirm before saving."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"AI Parse Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to parse prescription: {str(e)}")
 
 # 8. GET MEDICATION INFO
 @router.get("/medication-info/{medication_name}")
@@ -405,3 +504,54 @@ def run_scheduler_now(token: str, db: Session = Depends(get_db)):
     thread = threading.Thread(target=run_check_now)
     thread.start()
     return {"message": "Scheduler triggered! Check your terminal for results. 🔍"}
+# In app/routes/prescriptions.py
+
+@router.get("/sample-medications")
+def get_sample_medications(db: Session = Depends(get_db)):
+    """
+    Get random active prescriptions from real users (for demo)
+    """
+    # Get prescriptions from real users that have been added
+    prescriptions = db.query(Prescription).filter(
+        Prescription.is_active == True,
+        Prescription.document_status == "verified"
+    ).limit(10).all()
+    
+    if prescriptions:
+        sample_medications = []
+        for p in prescriptions:
+            days_left = p.days_left()
+            if days_left <= 3:
+                status = "critical"
+                tag = "🔴"
+                message = "Auto-charging"
+                tag_class = "tag-red"
+            elif days_left <= 5:
+                status = "warning"
+                tag = "⚠️"
+                message = f"{int(days_left)} days"
+                tag_class = "tag-yellow"
+            else:
+                status = "good"
+                tag = "✅"
+                message = f"{int(days_left)} days"
+                tag_class = "tag-green"
+            
+            sample_medications.append({
+                "name": f"{p.medication_name} {p.dosage}",
+                "dosage": p.dosage,
+                "days_left": round(days_left, 1),
+                "status": status,
+                "tag": tag,
+                "message": message,
+                "tag_class": tag_class,
+                "medication_name": p.medication_name
+            })
+        
+        # Shuffle and return random 3
+        import random
+        random.shuffle(sample_medications)
+        return {"medications": sample_medications[:3]}
+    else:
+        # Fallback to static samples
+        return get_static_samples()

@@ -6,6 +6,7 @@
   <title>MediCycle — Track Delivery</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
+    /* Your existing CSS styles here (same as before) */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef;
@@ -19,18 +20,15 @@
 
     .card { background: white; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); max-width: 520px; width: 100%; overflow: hidden; }
 
-    /* HEADER */
     .card-header { background: linear-gradient(135deg, var(--sidebar), var(--green)); padding: 2rem; color: white; }
     .card-header h1 { font-family: 'Fraunces', serif; font-size: 1.4rem; margin-bottom: 0.3rem; }
     .card-header p { opacity: 0.8; font-size: 0.88rem; }
     .order-ref { display: inline-block; background: rgba(255,255,255,0.15); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.78rem; margin-top: 0.75rem; letter-spacing: 0.04em; }
 
-    /* LOADING */
     .loading-state { padding: 3rem 2rem; text-align: center; color: var(--mid); }
     .spinner { width: 40px; height: 40px; border: 3px solid var(--green-pale); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* MED INFO */
     .med-info { padding: 1.5rem 2rem; border-bottom: 1px solid #f0f5f2; display: flex; align-items: center; gap: 1rem; }
     .med-icon { width: 52px; height: 52px; background: var(--green-pale); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
     .med-name { font-weight: 700; font-size: 1rem; margin-bottom: 0.2rem; }
@@ -39,7 +37,6 @@
     .med-amount .amount { font-weight: 700; font-size: 1rem; color: var(--green); }
     .med-amount .label { font-size: 0.72rem; color: var(--mid); }
 
-    /* TRACKER */
     .tracker { padding: 2rem; border-bottom: 1px solid #f0f5f2; }
     .tracker-title { font-size: 0.78rem; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1.5rem; }
 
@@ -57,14 +54,7 @@
     .step:not(:last-child).done::after { background: var(--green); }
     .step:not(:last-child).active::after { background: linear-gradient(to bottom, var(--green), #e0e8e4); }
 
-    .step-dot {
-      width: 40px; height: 40px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; flex-shrink: 0; z-index: 1;
-      background: #f0f5f2; color: #b0bdb8;
-      border: 2px solid #e0e8e4;
-      transition: all 0.3s;
-    }
+    .step-dot { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; z-index: 1; background: #f0f5f2; color: #b0bdb8; border: 2px solid #e0e8e4; transition: all 0.3s; }
     .step.done .step-dot { background: var(--green); color: white; border-color: var(--green); }
     .step.active .step-dot { background: white; color: var(--green); border-color: var(--green); box-shadow: 0 0 0 4px rgba(14,110,74,0.12); animation: pulse 1.5s infinite; }
     @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(14,110,74,0.12); } 50% { box-shadow: 0 0 0 8px rgba(14,110,74,0.06); } }
@@ -77,7 +67,6 @@
     .step-desc { font-size: 0.82rem; color: var(--mid); line-height: 1.5; }
     .step-time { font-size: 0.75rem; color: var(--green); font-weight: 600; margin-top: 0.3rem; }
 
-    /* PHARMACY INFO */
     .pharmacy-info { padding: 1.5rem 2rem; border-bottom: 1px solid #f0f5f2; }
     .pharmacy-title { font-size: 0.78rem; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
     .pharmacy-card { background: var(--cream); border-radius: 12px; padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; }
@@ -85,13 +74,11 @@
     .pharmacy-name { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.2rem; }
     .pharmacy-addr { font-size: 0.8rem; color: var(--mid); }
 
-    /* DELIVERED STATE */
-    .delivered-banner { background: var(--green); color: white; padding: 1.5rem 2rem; text-align: center; }
+    .delivered-banner { background: var(--green); color: white; padding: 1.5rem 2rem; text-align: center; display: none; }
     .delivered-banner .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
     .delivered-banner h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; margin-bottom: 0.3rem; }
     .delivered-banner p { opacity: 0.85; font-size: 0.88rem; }
 
-    /* ACTIONS */
     .actions { padding: 1.5rem 2rem; display: flex; gap: 1rem; }
     .btn { flex: 1; padding: 0.75rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.2s; border: none; }
     .btn-primary { background: var(--green); color: white; }
@@ -99,7 +86,6 @@
     .btn-outline { background: white; color: var(--green); border: 1.5px solid var(--green); }
     .btn-outline:hover { background: var(--green-pale); }
 
-    /* NOT FOUND */
     .not-found { padding: 3rem 2rem; text-align: center; }
     .not-found h2 { font-family: 'Fraunces', serif; font-size: 1.3rem; margin-bottom: 0.75rem; }
     .not-found p { color: var(--mid); font-size: 0.9rem; }
@@ -107,13 +93,8 @@
     .footer-note { text-align: center; font-size: 0.78rem; color: var(--mid); margin-top: 1.5rem; }
     .footer-note a { color: var(--green); text-decoration: none; }
 
-    /* DEMO CONTROLS */
-    .demo-controls { background: #fff9e6; border: 1px solid #ffe082; border-radius: 12px; padding: 1rem 1.25rem; margin: 1rem 2rem; }
-    .demo-controls p { font-size: 0.78rem; color: #7a5c00; font-weight: 600; margin-bottom: 0.75rem; }
-    .demo-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .demo-btn { padding: 0.4rem 0.9rem; border-radius: 20px; border: 1px solid #ffe082; background: white; font-size: 0.78rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; color: #7a5c00; transition: background 0.2s; }
-    .demo-btn:hover { background: #fff0cc; }
-    .demo-btn.active-btn { background: var(--accent); color: white; border-color: var(--accent); }
+    /* Hide demo controls in production */
+    .demo-controls { display: none; }
   </style>
 </head>
 <body>
@@ -134,6 +115,7 @@
         <div style="font-size:3rem;margin-bottom:1rem;">📦</div>
         <h2>Order Not Found</h2>
         <p>This tracking link is invalid or expired. Please check your SMS for the correct link.</p>
+        <a href="dashboard.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;">Go to Dashboard</a>
       </div>
     </div>
 
@@ -157,16 +139,6 @@
         <div class="med-amount">
           <div class="amount" id="medAmount">—</div>
           <div class="label">Amount paid</div>
-        </div>
-      </div>
-
-      <!-- DEMO CONTROLS -->
-      <div class="demo-controls">
-        <p>🧪 Demo Mode — Simulate delivery stages:</p>
-        <div class="demo-btns">
-          <button class="demo-btn" onclick="setStage('preparing')" id="btnPreparing">📦 Preparing</button>
-          <button class="demo-btn" onclick="setStage('out_for_delivery')" id="btnOut">🚚 Out for Delivery</button>
-          <button class="demo-btn" onclick="setStage('delivered')" id="btnDelivered">✅ Delivered</button>
         </div>
       </div>
 
@@ -226,8 +198,8 @@
         </div>
       </div>
 
-      <!-- DELIVERED BANNER (hidden until delivered) -->
-      <div class="delivered-banner" id="deliveredBanner" style="display:none;">
+      <!-- DELIVERED BANNER -->
+      <div class="delivered-banner" id="deliveredBanner">
         <div class="icon">🎉</div>
         <h2>Delivered Successfully!</h2>
         <p>Your 30-day supply has been delivered. Your prescription cycle has been reset.</p>
@@ -247,148 +219,175 @@
   </p>
 
   <script>
-    const API = 'http://127.0.0.1:8000';
-    const params = new URLSearchParams(window.location.search);
-    const transactionId = params.get('id');
+    const API = 'https://medicycle.onrender.com/api/v1';
     const token = localStorage.getItem('mc_token');
-
-    let currentStage = 'preparing';
-    let transactionData = null;
-
-    const STAGES = ['preparing', 'out_for_delivery', 'delivered'];
+    
+    // Get transaction ID from URL
+    const params = new URLSearchParams(window.location.search);
+    const transactionId = params.get('transaction_id') || params.get('id');
+    
+    let deliveryData = null;
 
     async function loadTracking() {
-      // If no transaction ID, show demo mode with mock data
+      // If no token, redirect to login
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      // If no transaction ID, redirect to dashboard
       if (!transactionId) {
-        showMockData('preparing');
+        window.location.href = 'dashboard.html';
         return;
       }
 
       try {
-        const res = await fetch(`${API}/payments/history?token=${token}`);
+        // Fetch delivery tracking data
+        const res = await fetch(`${API}/delivery/track/${transactionId}?token=${token}`);
+        
+        if (!res.ok) {
+          if (res.status === 404) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('notFoundState').style.display = 'block';
+          } else {
+            throw new Error('Failed to load delivery data');
+          }
+          return;
+        }
+        
         const data = await res.json();
-
-        if (!data.transactions || data.transactions.length === 0) {
-          showMockData('preparing');
-          return;
-        }
-
-        // Find the transaction
-        const tx = data.transactions.find(t => t.id === parseInt(transactionId))
-                 || data.transactions[0]; // fallback to latest
-
-        if (!tx) {
-          document.getElementById('loadingState').style.display = 'none';
-          document.getElementById('notFoundState').style.display = 'block';
-          return;
-        }
-
-        transactionData = tx;
-        renderTracking(tx);
-
-      } catch(e) {
-        // Fallback to demo mode
-        showMockData('preparing');
+        deliveryData = data;
+        renderTracking(data);
+        
+      } catch (error) {
+        console.error('Error loading tracking:', error);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('notFoundState').style.display = 'block';
       }
     }
 
-    function showMockData(stage) {
-      const mockTx = {
-        id: transactionId || 'DEMO',
-        prescription_id: 1,
-        amount: 80000,
-        status: 'success',
-        delivery_status: stage,
-        created_at: new Date().toISOString()
-      };
-      renderTracking(mockTx);
-    }
-
-    function renderTracking(tx) {
+    function renderTracking(data) {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('mainContent').style.display = 'block';
 
-      document.getElementById('orderRef').textContent = `Order #${tx.id}`;
-      document.getElementById('medName').textContent = `Prescription #${tx.prescription_id}`;
-      document.getElementById('medSub').textContent = '30-day supply · Auto-refill';
-      document.getElementById('medAmount').textContent = `₦${(tx.amount / 100).toLocaleString()}`;
+      // Update order reference
+      document.getElementById('orderRef').textContent = `Order #${data.transaction_id}`;
+      
+      // Update medication info
+      document.getElementById('medName').textContent = data.medication_name || `Prescription #${data.prescription_id}`;
+      document.getElementById('medSub').textContent = `${data.dosage || 'Standard dosage'} · ${data.quantity || 30}-day supply`;
+      document.getElementById('medAmount').textContent = `₦${(data.amount / 100).toLocaleString()}`;
 
-      const paidTime = new Date(tx.created_at);
-      document.getElementById('timePaid').textContent =
-        paidTime.toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      // Update payment time
+      const paidTime = new Date(data.created_at);
+      document.getElementById('timePaid').textContent = paidTime.toLocaleString('en-GB', { 
+        day: 'numeric', 
+        month: 'short', 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
 
-      updateStage(tx.delivery_status || 'preparing');
+      // Update pharmacy info
+      document.getElementById('pharmacyName').textContent = data.pharmacy_name || 'MediCycle Pharmacy Partner';
+      document.getElementById('pharmacyAddr').textContent = data.pharmacy_address || 'Loading delivery partner...';
+      
+      if (data.estimated_delivery) {
+        document.getElementById('pharmacyAddr').textContent += ` · Est. ${data.estimated_delivery}`;
+      }
+
+      // Update delivery stages
+      updateStages(data.current_stage, data);
     }
 
-    function updateStage(stage) {
-      currentStage = stage;
-
+    function updateStages(stage, data) {
       // Reset all steps
       ['stepPreparing', 'stepOut', 'stepDelivered'].forEach(id => {
         const el = document.getElementById(id);
         el.className = 'step pending';
       });
 
-      const now = new Date().toLocaleString('en-GB', {
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-      });
-
-      if (stage === 'preparing' || stage === 'out_for_delivery' || stage === 'delivered') {
-        document.getElementById('stepPreparing').className = stage === 'preparing' ? 'step active' : 'step done';
-        document.getElementById('timePreparing').textContent = now;
-        document.getElementById('timePreparing').style.display = 'block';
-        document.getElementById('pharmacyName').textContent = 'Halisi Pharma';
-        document.getElementById('pharmacyAddr').textContent = 'Westlands Estate · Est. 2–4 hours';
-      }
-
-      if (stage === 'out_for_delivery' || stage === 'delivered') {
-        document.getElementById('stepOut').className = stage === 'out_for_delivery' ? 'step active' : 'step done';
-        document.getElementById('timeOut').textContent = now;
-        document.getElementById('timeOut').style.display = 'block';
-        document.getElementById('pharmacyAddr').textContent = 'Westlands Estate · En route to you!';
-      }
-
-      if (stage === 'delivered') {
-        document.getElementById('stepDelivered').className = 'step done';
-        document.getElementById('timeDelivered').textContent = now;
-        document.getElementById('timeDelivered').style.display = 'block';
-        document.getElementById('deliveredBanner').style.display = 'block';
-        document.getElementById('pharmacyAddr').textContent = 'Westlands Estate · Delivered ✅';
-      }
-
-      // Update demo buttons
-      ['btnPreparing', 'btnOut', 'btnDelivered'].forEach(id => {
-        document.getElementById(id).className = 'demo-btn';
-      });
-      const btnMap = {
-        'preparing': 'btnPreparing',
-        'out_for_delivery': 'btnOut',
-        'delivered': 'btnDelivered'
+      const now = new Date();
+      
+      // Helper to format time
+      const formatTime = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return date.toLocaleString('en-GB', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
       };
-      if (btnMap[stage]) {
-        document.getElementById(btnMap[stage]).className = 'demo-btn active-btn';
-      }
-    }
 
-    async function setStage(stage) {
-      updateStage(stage);
-
-      // Also update backend if we have a transaction ID and token
-      if (transactionId && token) {
-        try {
-          await fetch(`${API}/payments/delivery/${transactionId}/status?token=${token}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: stage })
-          });
-        } catch(e) {
-          // Silent fail — demo still works
+      // Check if preparing stage is done or active
+      if (stage === 'preparing' || stage === 'out_for_delivery' || stage === 'delivered') {
+        const stepPreparing = document.getElementById('stepPreparing');
+        stepPreparing.className = stage === 'preparing' ? 'step active' : 'step done';
+        
+        const timePreparing = document.getElementById('timePreparing');
+        if (data.preparing_time) {
+          timePreparing.textContent = formatTime(data.preparing_time);
+          timePreparing.style.display = 'block';
+        } else if (stage !== 'preparing') {
+          // If we're past preparing but no timestamp, use created_at
+          timePreparing.textContent = formatTime(data.created_at);
+          timePreparing.style.display = 'block';
         }
       }
+
+      // Check if out for delivery stage is done or active
+      if (stage === 'out_for_delivery' || stage === 'delivered') {
+        const stepOut = document.getElementById('stepOut');
+        stepOut.className = stage === 'out_for_delivery' ? 'step active' : 'step done';
+        
+        const timeOut = document.getElementById('timeOut');
+        if (data.out_for_delivery_time) {
+          timeOut.textContent = formatTime(data.out_for_delivery_time);
+          timeOut.style.display = 'block';
+        }
+      }
+
+      // Check if delivered
+      if (stage === 'delivered') {
+        const stepDelivered = document.getElementById('stepDelivered');
+        stepDelivered.className = 'step done';
+        
+        const timeDelivered = document.getElementById('timeDelivered');
+        if (data.delivered_time) {
+          timeDelivered.textContent = formatTime(data.delivered_time);
+          timeDelivered.style.display = 'block';
+        }
+        
+        document.getElementById('deliveredBanner').style.display = 'block';
+      } else {
+        document.getElementById('deliveredBanner').style.display = 'none';
+      }
     }
 
-    // Init
+    // Auto-refresh every 30 seconds
+    let refreshInterval;
+    
+    function startAutoRefresh() {
+      refreshInterval = setInterval(() => {
+        if (transactionId && token) {
+          loadTracking();
+        }
+      }, 30000); // Refresh every 30 seconds
+    }
+    
+    function stopAutoRefresh() {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    }
+
+    // Initialize
     loadTracking();
+    startAutoRefresh();
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', stopAutoRefresh);
   </script>
 </body>
 </html>

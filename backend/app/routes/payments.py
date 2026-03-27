@@ -22,6 +22,9 @@ from app.services.scheduler import route_to_pharmacy, send_sms
 router = APIRouter()
 
 USE_MOCK = os.getenv("USE_MOCK_PAYMENTS", "true").lower() == "true"
+INTERSWITCH_MERCHANT_CODE = os.getenv("INTERSWITCH_MERCHANT_CODE", "")
+INTERSWITCH_PAYMENT_ITEM_ID = os.getenv("INTERSWITCH_PAYMENT_ITEM_ID", "")
+INTERSWITCH_ENV = os.getenv("INTERSWITCH_ENV", "sandbox")
 
 
 class TokenizeCardRequest(BaseModel):
@@ -40,6 +43,16 @@ class CaregiverChargeRequest(BaseModel):
     patient_id: int
     caregiver_name: str
     card_data: str
+
+
+@router.get("/public-config")
+def public_payment_config():
+    return {
+        "merchant_code": INTERSWITCH_MERCHANT_CODE,
+        "pay_item_id": INTERSWITCH_PAYMENT_ITEM_ID,
+        "mode": "TEST" if INTERSWITCH_ENV.lower() == "sandbox" else "LIVE",
+        "mock_payments": USE_MOCK,
+    }
 
 
 def _do_charge(

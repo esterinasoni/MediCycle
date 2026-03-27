@@ -157,12 +157,24 @@
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 
-    // Interswitch sandbox credentials
-    const ISW_MERCHANT_CODE = 'MX276154';
-    const ISW_PAY_ITEM_ID = 'Default_Payable_MX276154';
-    const ISW_MODE = 'TEST'; // Change to 'LIVE' for production
+    let paymentConfig = {
+      merchant_code: '',
+      pay_item_id: '',
+      mode: 'TEST',
+      mock_payments: false
+    };
     
     let currentTransactionRef = null; // Store current transaction reference
+
+    async function loadPaymentConfig() {
+      try {
+        const res = await fetch(`${API}/payments/public-config`);
+        if (!res.ok) throw new Error('Failed to load payment config');
+        paymentConfig = await res.json();
+      } catch (error) {
+        console.error('Payment config error:', error);
+      }
+    }
 
     // Check card status
     async function checkCardStatus() {
@@ -229,13 +241,19 @@
         return;
       }
 
+      if (!paymentConfig.merchant_code || !paymentConfig.pay_item_id) {
+        error.textContent = 'Payment service is not configured yet. Please contact support.';
+        error.style.display = 'block';
+        return;
+      }
+
       // Generate unique transaction reference
       currentTransactionRef = `MED${Date.now()}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-      const amountKobo = 5000; // ₦50.00 (minimum for tokenization)
+      const amountKobo = '5000'; // ₦50.00 in kobo
 
       console.log('Launching Interswitch checkout with:', {
-        merchant_code: ISW_MERCHANT_CODE,
-        pay_item_id: ISW_PAY_ITEM_ID,
+        merchant_code: paymentConfig.merchant_code,
+        pay_item_id: paymentConfig.pay_item_id,
         txn_ref: currentTransactionRef,
         amount: amountKobo,
         customer_email: email
@@ -243,15 +261,15 @@
 
       // Launch Interswitch inline checkout
       window.webpayCheckout({
-        merchant_code: ISW_MERCHANT_CODE,
-        pay_item_id: ISW_PAY_ITEM_ID,
+        merchant_code: paymentConfig.merchant_code,
+        pay_item_id: paymentConfig.pay_item_id,
         txn_ref: currentTransactionRef,
         amount: amountKobo,
-        currency: 566, // NGN
-        site_redirect_url: window.location.href,
+        currency: '566',
+        site_redirect_url: `${window.location.origin}${window.location.pathname}`,
         customer_id: email,
         customer_email: email,
-        mode: ISW_MODE,
+        mode: paymentConfig.mode,
         onComplete: handlePaymentComplete,
         onError: handlePaymentError
       });
@@ -364,8 +382,10 @@
     }
 
     // Initialize
-    checkCardStatus();
-    loadTransactions();
+    loadPaymentConfig().then(() => {
+      checkCardStatus();
+      loadTransactions();
+    });
   </script>
 </body>
 </html>

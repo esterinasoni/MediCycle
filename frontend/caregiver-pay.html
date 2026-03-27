@@ -187,16 +187,28 @@
   <script>
     const API = window.API_URL || 'http://127.0.0.1:8000';
 
-    // ✅ Your Interswitch sandbox credentials
-    const ISW_MERCHANT_CODE = 'MX276154';
-    const ISW_PAY_ITEM_ID   = 'Default_Payable_MX276154';
-    const ISW_MODE          = 'TEST'; // ← change to 'LIVE' when going live
+    let paymentConfig = {
+      merchant_code: '',
+      pay_item_id: '',
+      mode: 'TEST',
+      mock_payments: false
+    };
 
     const params         = new URLSearchParams(window.location.search);
     const prescriptionId = params.get('prescription_id');
     const patientId      = params.get('patient_id');
 
     let amountKobo = 0;
+
+    async function loadPaymentConfig() {
+      try {
+        const res = await fetch(`${API}/payments/public-config`);
+        if (!res.ok) throw new Error('Failed to load payment config');
+        paymentConfig = await res.json();
+      } catch (error) {
+        console.error('Payment config error:', error);
+      }
+    }
 
     // ── LOAD DETAILS ──
     async function loadDetails() {
@@ -253,6 +265,10 @@
         payError.textContent = 'Please enter a valid email address.';
         payError.style.display = 'block'; return;
       }
+      if (!paymentConfig.merchant_code || !paymentConfig.pay_item_id) {
+        payError.textContent = 'Payment service is not configured yet. Please contact support.';
+        payError.style.display = 'block'; return;
+      }
 
       // Generate unique transaction reference
       const txnRef = `MEDCG${Date.now()}${Math.random().toString(36).substr(2,4).toUpperCase()}`;
@@ -261,17 +277,17 @@
 
       // ✅ Launch Interswitch popup — handles all card entry & encryption
       window.webpayCheckout({
-        merchant_code:      ISW_MERCHANT_CODE,
-        pay_item_id:        ISW_PAY_ITEM_ID,
+        merchant_code:      paymentConfig.merchant_code,
+        pay_item_id:        paymentConfig.pay_item_id,
         txn_ref:            txnRef,
-        amount:             amountKobo,
-        currency:           566,          // 566 = NGN
-        site_redirect_url:  window.location.href,
+        amount:             String(amountKobo),
+        currency:           '566',
+        site_redirect_url:  `${window.location.origin}${window.location.pathname}`,
         customer_id:        cgEmail,
         customer_firstname: nameParts[0] || cgName,
         customer_lastname:  nameParts.slice(1).join(' ') || '',
         customer_email:     cgEmail,
-        mode:               ISW_MODE,
+        mode:               paymentConfig.mode,
         onComplete:         handlePaymentComplete,
         onError:            handlePaymentError
       });
@@ -334,7 +350,7 @@
     function show(id) { document.getElementById(id).style.display = 'block'; }
     function hide(id) { document.getElementById(id).style.display = 'none'; }
 
-    loadDetails();
+    loadPaymentConfig().then(() => loadDetails());
   </script>
 </body>
 </html>

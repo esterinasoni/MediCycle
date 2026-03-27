@@ -333,7 +333,8 @@
     function handlePaymentError(response) {
       console.error('[ISW] Payment error:', response);
       const payError = document.getElementById('payError');
-      payError.textContent = 'Payment was not completed. Please try again.';
+      const details = typeof response === 'object' ? JSON.stringify(response) : String(response || '');
+      payError.textContent = `Payment was not completed. Please try again. ${details}`;
       payError.style.display = 'block';
     }
 

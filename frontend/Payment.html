@@ -337,7 +337,8 @@
     function handlePaymentError(response) {
       console.error('[Interswitch] Payment error:', response);
       const error = document.getElementById('cardError');
-      error.textContent = 'Card could not be saved. Please try again or use a different card.';
+      const details = typeof response === 'object' ? JSON.stringify(response) : String(response || '');
+      error.textContent = `Card could not be saved. Please try again or use a different card. ${details}`;
       error.style.display = 'block';
       
       const btn = document.getElementById('saveCardBtn');

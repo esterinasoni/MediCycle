@@ -1,227 +1,96 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MediCycle â€” Sign In</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef; --cream: #faf8f3; --ink: #111a14; --mid: #4a6155; --accent: #f4a935; --red: #e84545; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-
-    .auth-container { display: grid; grid-template-columns: 1fr 1fr; max-width: 800px; width: 100%; background: white; border-radius: 28px; overflow: hidden; box-shadow: 0 20px 80px rgba(0,0,0,0.1); }
-    .auth-left { background: var(--ink); padding: 3rem; display: flex; flex-direction: column; justify-content: space-between; color: white; position: relative; overflow: hidden; }
-    .auth-left::before { content: ''; position: absolute; top: -80px; right: -80px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(14,110,74,0.3), transparent 70%); border-radius: 50%; }
-    .logo { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; color: white; text-decoration: none; display: block; margin-bottom: 3rem; position: relative; z-index: 1; }
-    .logo span { color: var(--accent); }
-    .auth-left h2 { font-family: 'Fraunces', serif; font-size: 1.8rem; line-height: 1.25; margin-bottom: 1rem; position: relative; z-index: 1; }
-    .auth-left h2 em { font-style: italic; color: #4fd99b; }
-    .auth-left p { opacity: 0.7; line-height: 1.7; font-size: 0.9rem; position: relative; z-index: 1; }
-    .med-card { background: rgba(255,255,255,0.08); border-radius: 16px; padding: 1.2rem; margin-top: 2rem; position: relative; z-index: 1; }
-    .med-card-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
-    .med-card-row:last-child { border-bottom: none; }
-    .med-card-row span:first-child { opacity: 0.7; }
-    .med-card-row span:last-child { font-weight: 600; }
-    .tag-green { color: #4fd99b; }
-    .tag-yellow { color: var(--accent); }
-    .tag-red { color: #ff6b6b; }
-    .loading-meds { text-align: center; padding: 1rem; font-size: 0.8rem; opacity: 0.6; }
-    .error-meds { text-align: center; padding: 1rem; font-size: 0.8rem; color: #ff6b6b; }
-
-    .auth-right { padding: 3rem; }
-    .auth-right h3 { font-family: 'Fraunces', serif; font-size: 1.8rem; margin-bottom: 0.4rem; }
-    .auth-right .sub { color: var(--mid); font-size: 0.9rem; margin-bottom: 2rem; }
-    .auth-right .sub a { color: var(--green); text-decoration: none; font-weight: 600; }
-
-    .verified-banner { background: var(--green-pale); border: 1px solid #b2dfcc; color: var(--green); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1.5rem; display: none; }
-
-    .form-group { margin-bottom: 1.2rem; }
-    label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--mid); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    input { width: 100%; padding: 0.75rem 1rem; border-radius: 12px; border: 1.5px solid #e0e8e4; font-size: 0.95rem; font-family: 'DM Sans', sans-serif; color: var(--ink); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
-    input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(14,110,74,0.08); }
-    input::placeholder { color: #b0bdb8; }
-
-    .error-msg { background: #fff0f0; border: 1px solid #ffcdd2; color: var(--red); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
-    .btn-submit { width: 100%; padding: 0.9rem; background: var(--green); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
-    .btn-submit:hover { background: var(--green-light); transform: translateY(-1px); }
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    @media (max-width: 700px) {
-      .auth-container { grid-template-columns: 1fr; }
-      .auth-left { display: none; }
-      body { padding: 1rem; align-items: flex-start; }
-    }
-  </style>
-    <script src="config.js"></script>`n    </head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCycle — Sign In</title>
+    <script src="config.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #0e6e4a; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; }
+        button:hover { background: #14a370; }
+        .error { color: red; margin-top: 10px; display: none; }
+        .success { color: green; margin-top: 10px; display: none; }
+        .verified-banner { background: #e8f5ef; color: #0e6e4a; padding: 10px; border-radius: 4px; margin-bottom: 20px; display: none; text-align: center; }
+    </style>
+</head>
 <body>
-  <div class="auth-container">
-    <div class="auth-left">
-      <div>
-        <a href="index.html" class="logo">Medi<span>Cycle</span></a>
-        <h2>Your medications.<br/><em>Always on time.</em></h2>
-        <p>MediCycle monitors your supply daily and acts before you run out.</p>
-        <div class="med-card" id="medPreview">
-          <div class="loading-meds">Loading medication examples...</div>
-        </div>
-      </div>
-      <p style="font-size:0.8rem; opacity:0.4;">Secured by Interswitch Â· Powered by Gemini AI</p>
+    <h1>Welcome Back</h1>
+    <p>Don't have an account? <a href="register.html">Create one</a></p>
+    
+    <div id="verifiedBanner" class="verified-banner">✅ Account verified! Please sign in.</div>
+    <div id="loginError" class="error"></div>
+    
+    <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="your@email.com">
     </div>
-
-    <div class="auth-right">
-      <h3>Welcome back</h3>
-      <p class="sub">No account yet? <a href="register.html">Create one â†’</a></p>
-
-      <div class="verified-banner" id="verifiedBanner">âœ… Account verified! Please sign in to continue.</div>
-      <div class="error-msg" id="loginError"></div>
-
-      <div class="form-group">
-        <label>Email Address</label>
-        <input type="email" id="email" placeholder="emeka@email.com"/>
-      </div>
-      <div class="form-group">
+    
+    <div class="form-group">
         <label>Password</label>
-        <input type="password" id="password" placeholder="Your password"/>
-      </div>
-      <button class="btn-submit" id="loginBtn" onclick="login()">Sign In â†’</button>
+        <input type="password" id="password" placeholder="Enter your password">
     </div>
-  </div>
-
-  <script>\n    // API URL from config.js or default\n    const API = window.API_URL || window.location.origin;\n    console.log("API URL:", API);
     
-    let rotateInterval;
+    <button onclick="loginUser()">Sign In</button>
 
-    // Fetch sample medications from backend
-    async function fetchSampleMedications() {
-      const medPreview = document.getElementById('medPreview');
-      medPreview.innerHTML = '<div class="loading-meds">Loading medication examples...</div>';
-      
-      try {
-        const res = await fetch(`${API}/prescriptions/sample-medications`);
+    <script>
+        const API = window.API_URL || window.location.origin;
+        console.log('API URL:', API);
         
-        if (!res.ok) {
-          throw new Error('Failed to fetch sample medications');
+        // Show verified banner if coming from registration
+        if (window.location.search.includes('verified=1')) {
+            document.getElementById('verifiedBanner').style.display = 'block';
         }
         
-        const data = await res.json();
-        
-        if (data.medications && data.medications.length > 0) {
-          updateMedicationDisplay(data.medications);
-          // Rotate to new random medications every 5 seconds
-          if (rotateInterval) clearInterval(rotateInterval);
-          rotateInterval = setInterval(async () => {
-            const newRes = await fetch(`${API}/prescriptions/sample-medications`);
-            if (newRes.ok) {
-              const newData = await newRes.json();
-              updateMedicationDisplay(newData.medications);
+        window.loginUser = async function() {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.style.display = 'none';
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                errorDiv.textContent = 'Please enter email and password';
+                errorDiv.style.display = 'block';
+                return;
             }
-          }, 5000);
-        } else {
-          throw new Error('No medications found');
-        }
+            
+            try {
+                const response = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Login failed');
+                }
+                
+                // Store token
+                localStorage.setItem('mc_token', data.access_token);
+                localStorage.setItem('mc_user', JSON.stringify({ email, name: data.user?.full_name || '' }));
+                
+                // Redirect to dashboard
+                window.location.href = 'Dashboard.html';
+                
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.style.display = 'block';
+                console.error('Login error:', err);
+            }
+        };
         
-      } catch (error) {
-        console.error('Error fetching sample medications:', error);
-        medPreview.innerHTML = `
-          <div class="error-meds">
-            âš ï¸ Could not load examples<br/>
-            <small>Check your connection</small>
-          </div>
-        `;
-        // Fallback to local examples if backend fails
-        useLocalFallback();
-      }
-    }
-    
-    function updateMedicationDisplay(medications) {
-      const medPreview = document.getElementById('medPreview');
-      
-      if (!medications || medications.length === 0) {
-        medPreview.innerHTML = '<div class="loading-meds">No examples available</div>';
-        return;
-      }
-      
-      medPreview.innerHTML = medications.map(med => `
-        <div class="med-card-row">
-          <span>${med.name || med.medication_name} ${med.dosage || ''}</span>
-          <span class="${med.tag_class}">${med.tag} ${med.message}</span>
-        </div>
-      `).join('');
-    }
-    
-    function useLocalFallback() {
-      // Fallback medication examples in case backend is not available
-      const fallbackMeds = [
-        { name: "Amlodipine 5mg", tag: "âœ…", message: "18 days", tag_class: "tag-green" },
-        { name: "Metformin 500mg", tag: "âš ï¸", message: "4 days", tag_class: "tag-yellow" },
-        { name: "Lisinopril 10mg", tag: "ðŸ”´", message: "Auto-charging", tag_class: "tag-red" }
-      ];
-      
-      const medPreview = document.getElementById('medPreview');
-      medPreview.innerHTML = fallbackMeds.map(med => `
-        <div class="med-card-row">
-          <span>${med.name}</span>
-          <span class="${med.tag_class}">${med.tag} ${med.message}</span>
-        </div>
-      `).join('');
-    }
-
-    // Show verified banner if coming from registration
-    if (new URLSearchParams(window.location.search).get('verified') === '1') {
-      document.getElementById('verifiedBanner').style.display = 'block';
-    }
-
-    window.login = async function login() {
-      const error = document.getElementById('loginError');
-      error.style.display = 'none';
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      if (!email || !password) { 
-        error.textContent = 'Please enter email and password.'; 
-        error.style.display = 'block'; 
-        return; 
-      }
-
-      const btn = document.getElementById('loginBtn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span>Signing in...';
-
-      try {
-        const res = await fetch(`${API}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+        // Allow Enter key to submit
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loginUser();
+            }
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Login failed');
-        
-        localStorage.setItem('mc_token', data.access_token);
-        localStorage.setItem('mc_user', JSON.stringify({ 
-          email, 
-          name: data.user?.full_name || '',
-          id: data.user?.id
-        }));
-        window.location.href = 'dashboard.html';
-      } catch (err) {
-        error.textContent = err.message;
-        error.style.display = 'block';
-        btn.disabled = false;
-        btn.innerHTML = 'Sign In â†’';
-      }
-    }
-
-    // Start fetching sample medications
-    fetchSampleMedications();
-
-    document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-    
-    // Cleanup interval on page unload
-    window.addEventListener('beforeunload', () => {
-      if (rotateInterval) clearInterval(rotateInterval);
-    });
-  </script>
+    </script>
 </body>
 </html>
-

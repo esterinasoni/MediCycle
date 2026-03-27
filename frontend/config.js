@@ -8,6 +8,9 @@ if (!window.API_URL) {
     window.API_URL = isProduction ? window.location.origin : 'http://127.0.0.1:8000';
 }
 
-console.log('Environment:', isProduction ? 'Production' : 'Development');
+console.log('=' . repeat(50));
+console.log('MediCycle Frontend Loaded');
+console.log('Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 console.log('API URL:', window.API_URL);
 console.log('Hostname:', window.location.hostname);
+console.log('=' . repeat(50));

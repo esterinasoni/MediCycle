@@ -1,253 +1,175 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MediCycle â€” Create Account</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef;
-      --cream: #faf8f3; --ink: #111a14; --mid: #4a6155;
-      --accent: #f4a935; --red: #e84545;
-    }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-
-    .auth-container { display: grid; grid-template-columns: 1fr 1fr; max-width: 900px; width: 100%; background: white; border-radius: 28px; overflow: hidden; box-shadow: 0 20px 80px rgba(0,0,0,0.1); }
-
-    .auth-left { background: var(--green); padding: 3rem; display: flex; flex-direction: column; justify-content: space-between; color: white; }
-    .logo { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; color: white; text-decoration: none; margin-bottom: 2rem; display: block; }
-    .logo span { color: var(--accent); }
-    .auth-left h2 { font-family: 'Fraunces', serif; font-size: 2rem; line-height: 1.2; margin-bottom: 1rem; }
-    .auth-left h2 em { font-style: italic; color: rgba(255,255,255,0.7); }
-    .auth-left p { opacity: 0.8; line-height: 1.7; font-size: 0.95rem; margin-bottom: 2rem; }
-    .trust-items { display: flex; flex-direction: column; gap: 0.8rem; }
-    .trust-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.88rem; opacity: 0.9; }
-    .trust-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-
-    .auth-right { padding: 3rem; }
-    .auth-right h3 { font-family: 'Fraunces', serif; font-size: 1.6rem; margin-bottom: 0.4rem; }
-    .auth-right .sub { color: var(--mid); font-size: 0.9rem; margin-bottom: 2rem; }
-    .auth-right .sub a { color: var(--green); text-decoration: none; font-weight: 600; }
-
-    .steps-indicator { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
-    .step-dot { height: 4px; border-radius: 2px; background: var(--green-pale); flex: 1; transition: background 0.3s; }
-    .step-dot.active { background: var(--green); }
-
-    .form-group { margin-bottom: 1.2rem; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--mid); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em; }
-    input, select {
-      width: 100%; padding: 0.75rem 1rem; border-radius: 12px;
-      border: 1.5px solid #e0e8e4; font-size: 0.95rem;
-      font-family: 'DM Sans', sans-serif; color: var(--ink);
-      background: white; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    input:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(14,110,74,0.08); }
-    input::placeholder { color: #b0bdb8; }
-
-    .section-divider { font-size: 0.78rem; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.08em; margin: 1.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--green-pale); }
-
-    .btn-submit {
-      width: 100%; padding: 0.9rem; background: var(--green); color: white;
-      border: none; border-radius: 12px; font-size: 1rem; font-weight: 600;
-      font-family: 'DM Sans', sans-serif; cursor: pointer;
-      transition: all 0.2s; margin-top: 1rem;
-    }
-    .btn-submit:hover { background: var(--green-light); transform: translateY(-1px); }
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-    .error-msg { background: #fff0f0; border: 1px solid #ffcdd2; color: var(--red); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
-    .success-msg { background: var(--green-pale); border: 1px solid #b2dfcc; color: var(--green); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
-
-    /* OTP STEP */
-    .otp-step { display: none; }
-    .otp-inputs { display: flex; gap: 0.75rem; justify-content: center; margin: 1.5rem 0; }
-    .otp-input { width: 52px; height: 60px; text-align: center; font-size: 1.5rem; font-weight: 700; border: 2px solid #e0e8e4; border-radius: 12px; outline: none; font-family: 'Fraunces', serif; transition: border-color 0.2s; }
-    .otp-input:focus { border-color: var(--green); }
-    .otp-info { text-align: center; color: var(--mid); font-size: 0.88rem; }
-    .otp-info strong { color: var(--ink); }
-
-    .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    @media (max-width: 700px) {
-      .auth-container { grid-template-columns: 1fr; }
-      .auth-left { display: none; }
-      body { padding: 1rem; align-items: flex-start; }
-    }
-  </style>
-    <script src="config.js"></script>`n    </head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCycle — Create Account</title>
+    <script src="config.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #0e6e4a; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #14a370; }
+        .error { color: red; margin-top: 10px; display: none; }
+        .success { color: green; margin-top: 10px; display: none; }
+        .step { display: none; }
+        .active { display: block; }
+    </style>
+</head>
 <body>
-  <div class="auth-container">
-    <div class="auth-left">
-      <div>
-        <a href="index.html" class="logo">Medi<span>Cycle</span></a>
-        <h2>Start your <em>automated</em> health journey today.</h2>
-        <p>Set up your medications once and MediCycle handles the rest â€” alerts, payments, delivery.</p>
-      </div>
-      <div class="trust-items">
-        <div class="trust-item"><div class="trust-icon"></div>Bank-grade security via Interswitch</div>
-        <div class="trust-item"><div class="trust-icon"></div>AI-powered prescription parsing</div>
-        <div class="trust-item"><div class="trust-icon"></div>Smart pharmacy routing across Nigeria</div>
-        <div class="trust-item"><div class="trust-icon"></div>Real-time SMS alerts & notifications</div>
-      </div>
+    <h1>Create MediCycle Account</h1>
+    
+    <!-- Step 1: Registration Form -->
+    <div id="registerStep" class="step active">
+        <div id="regError" class="error"></div>
+        <div id="regSuccess" class="success"></div>
+        
+        <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="fullName" placeholder="Enter your full name">
+        </div>
+        
+        <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="email" placeholder="your@email.com">
+        </div>
+        
+        <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="phone" placeholder="08012345678">
+        </div>
+        
+        <div class="form-group">
+            <label>Password *</label>
+            <input type="password" id="password" placeholder="Min. 6 characters">
+        </div>
+        
+        <button onclick="registerUser()">Create Account</button>
+    </div>
+    
+    <!-- Step 2: OTP Verification -->
+    <div id="otpStep" class="step">
+        <p>We've sent a verification code to <strong id="otpEmail"></strong></p>
+        <div class="form-group">
+            <label>Enter 6-digit code</label>
+            <input type="text" id="otpCode" maxlength="6" placeholder="123456">
+        </div>
+        <div id="otpError" class="error"></div>
+        <button onclick="verifyOtp()">Verify Account</button>
     </div>
 
-    <div class="auth-right">
-      <!-- STEP 1: REGISTER FORM -->
-      <div id="registerStep">
-        <h3>Create your account</h3>
-        <p class="sub">Already have one? <a href="login.html">Sign in â†’</a></p>
-        <div class="steps-indicator">
-          <div class="step-dot active" id="dot1"></div>
-          <div class="step-dot" id="dot2"></div>
-        </div>
-
-        <div class="error-msg" id="regError"></div>
-        <div class="success-msg" id="regSuccess"></div>
-
-        <div class="form-row">
-          <div class="form-group"><label>First & Last Name</label><input type="text" id="fullName" placeholder="Emeka Okafor"/></div>
-          <div class="form-group"><label>Phone Number</label><input type="tel" id="phone" placeholder="08012345678"/></div>
-        </div>
-        <div class="form-group"><label>Email Address</label><input type="email" id="email" placeholder="emeka@email.com"/></div>
-        <div class="form-group"><label>Password</label><input type="password" id="password" placeholder="Min. 8 characters"/></div>
-
-        <div class="section-divider"> Delivery Address (Optional)</div>
-        <div class="form-group"><label>Street Address</label><input type="text" id="address" placeholder="23 Allen Avenue"/></div>
-        <div class="form-row">
-          <div class="form-group"><label>City</label><input type="text" id="city" placeholder="Lagos"/></div>
-          <div class="form-group"><label>State</label><input type="text" id="state" placeholder="Lagos State"/></div>
-        </div>
-        <div class="form-group"><label>Landmark</label><input type="text" id="landmark" placeholder="Near GTBank"/></div>
-
-        <div class="section-divider">Caregiver / Emergency Contact (Optional)</div>
-        <p style="font-size:0.82rem;color:var(--mid);margin-bottom:1rem;line-height:1.5;">If auto-payment fails, your caregiver will receive an alert and a one-click payment link to refill on your behalf.</p>
-        <div class="form-row">
-          <div class="form-group"><label>Caregiver Name</label><input type="text" id="caregiverName" placeholder="e.g. Adaeze Okafor"/></div>
-          <div class="form-group"><label>Caregiver Phone</label><input type="tel" id="caregiverPhone" placeholder="e.g. 08098765432"/></div>
-        </div>
-
-        <button class="btn-submit" id="registerBtn" onclick="register()">Create Account â†’</button>
-      </div>
-
-      <!-- STEP 2: OTP -->
-      <div class="otp-step" id="otpStep">
-        <h3>Verify your account</h3>
-        <p class="sub">We sent a 6-digit code to your email</p>
-        <div class="steps-indicator">
-          <div class="step-dot" id="dot1b"></div>
-          <div class="step-dot active" id="dot2b"></div>
-        </div>
-
-        <div class="error-msg" id="otpError"></div>
-
-        <div class="otp-inputs">
-          <input class="otp-input" maxlength="1" id="o1" oninput="otpNext(this,'o2')"/>
-          <input class="otp-input" maxlength="1" id="o2" oninput="otpNext(this,'o3')"/>
-          <input class="otp-input" maxlength="1" id="o3" oninput="otpNext(this,'o4')"/>
-          <input class="otp-input" maxlength="1" id="o4" oninput="otpNext(this,'o5')"/>
-          <input class="otp-input" maxlength="1" id="o5" oninput="otpNext(this,'o6')"/>
-          <input class="otp-input" maxlength="1" id="o6" oninput="otpNext(this,null)"/>
-        </div>
-        <p class="otp-info">Enter the 6-digit code sent to <strong id="otpEmail"></strong></p>
-        <button class="btn-submit" id="otpBtn" onclick="verifyOtp()">Verify & Continue â†’</button>
-      </div>
-    </div>
-  </div>
-
-  <script>\n    // API URL from config.js or default\n    const API = window.API_URL || window.location.origin;\n    console.log("API URL:", API);
-    
-    let registeredEmail = '';
-
-    function show(id) { document.getElementById(id).style.display = 'block'; }
-    function hide(id) { document.getElementById(id).style.display = 'none'; }
-    function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
-    function hideError(id) { document.getElementById(id).style.display = 'none'; }
-
-   window.register = async function register() {
-    hideError('regError'); 
-    hideError('regSuccess');
-    
-    const btn = document.getElementById('registerBtn');
-    const fullName = document.getElementById('fullName').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-
-    if (!fullName || !phone || !email || !password) {
-        return showError('regError', 'Please fill in all required fields.');
-    }
-    
-    if (password.length < 6) {
-        return showError('regError', 'Password must be at least 6 characters.');
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span>Creating account...';
-
-    try {
-        const res = await fetch(`${API}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                full_name: fullName,
-                phone_number: phone,
-                email: email,
-                password: password,
-                address: document.getElementById('address').value.trim() || null,
-                city: document.getElementById('city').value.trim() || null,
-                state: document.getElementById('state').value.trim() || null,
-                landmark: document.getElementById('landmark').value.trim() || null,
-                caregiver_name: document.getElementById('caregiverName').value.trim() || null,
-                caregiver_phone: document.getElementById('caregiverPhone').value.trim() || null,
-            })
+    <script>
+        const API = window.API_URL || window.location.origin;
+        console.log('API URL:', API);
+        
+        let registeredEmail = '';
+        
+        window.registerUser = async function() {
+            const errorDiv = document.getElementById('regError');
+            const successDiv = document.getElementById('regSuccess');
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!fullName || !email || !phone || !password) {
+                errorDiv.textContent = 'Please fill in all fields';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password must be at least 6 characters';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email,
+                        phone_number: phone,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Registration failed');
+                }
+                
+                registeredEmail = email;
+                document.getElementById('otpEmail').textContent = email;
+                
+                // Switch to OTP step
+                document.getElementById('registerStep').classList.remove('active');
+                document.getElementById('otpStep').classList.add('active');
+                
+                successDiv.textContent = 'Registration successful! Check your email for OTP.';
+                successDiv.style.display = 'block';
+                
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.style.display = 'block';
+                console.error('Registration error:', err);
+            }
+        };
+        
+        window.verifyOtp = async function() {
+            const otpCode = document.getElementById('otpCode').value.trim();
+            const errorDiv = document.getElementById('otpError');
+            errorDiv.style.display = 'none';
+            
+            if (!otpCode || otpCode.length !== 6) {
+                errorDiv.textContent = 'Please enter the 6-digit code';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API}/auth/verify-otp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: registeredEmail,
+                        otp_code: otpCode
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Verification failed');
+                }
+                
+                window.location.href = 'login.html?verified=1';
+                
+            } catch (err) {
+                errorDiv.textContent = err.message;
+                errorDiv.style.display = 'block';
+                console.error('Verification error:', err);
+            }
+        };
+        
+        // Allow Enter key to submit
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('registerStep').classList.contains('active')) {
+                    registerUser();
+                } else if (document.getElementById('otpStep').classList.contains('active')) {
+                    verifyOtp();
+                }
+            }
         });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-            throw new Error(data.detail || 'Registration failed');
-        }
-
-        // Store email and show OTP step
-        registeredEmail = email;
-        document.getElementById('otpEmail').textContent = email;
-        document.getElementById('registerStep').style.display = 'none';
-        document.getElementById('otpStep').style.display = 'block';
-        
-        // Show success message about email
-        const otpStep = document.getElementById('otpStep');
-        
-        // Remove any existing info messages
-        const existingInfo = otpStep.querySelector('.email-info');
-        if (existingInfo) existingInfo.remove();
-        
-        const infoMsg = document.createElement('div');
-        infoMsg.className = 'email-info';
-        infoMsg.style.cssText = 'background:#e8f5ef;border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;color:#0e6e4a;text-align:center;';
-        infoMsg.innerHTML = 'ðŸ“§ We\'ve sent a verification code to your email. Please check your inbox (and spam folder).';
-        otpStep.insertBefore(infoMsg, otpStep.firstChild);
-        
-        // Focus on first OTP input
-        setTimeout(() => document.getElementById('o1').focus(), 100);
-        
-        // Remove any dev mode OTP display
-        const existingHint = document.querySelector('.dev-hint');
-        if (existingHint) existingHint.remove();
-        
-        showSuccess('regSuccess', data.message);
-        
-    } catch (err) {
-        showError('regError', err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = 'Create Account â†’';
-    }
-}
-  </script>
+    </script>
 </body>
 </html>
-

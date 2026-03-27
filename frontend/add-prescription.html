@@ -461,7 +461,7 @@ async function aiParseDocument(input) {
 
         showSuccess(`✅ ${medName} added successfully! ${selectedFile ? 'Document uploaded and tracking is now active.' : 'Add a prescription document to activate refill tracking.'}`);
         btn.innerHTML = '✅ Saved! Go to Dashboard →';
-        btn.onclick = () => window.location.href = 'Dashboard.html';
+        btn.onclick = () => window.location.href = 'dashboard.html';
         
       } catch (err) {
         showError(err.message);

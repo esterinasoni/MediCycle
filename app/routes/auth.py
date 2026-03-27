@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import os
 import random
 from app.services.email import send_otp_email
+from app.services.email_simple import send_otp_email
 import asyncio
 
 load_dotenv()

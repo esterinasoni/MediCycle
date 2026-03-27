@@ -1,4 +1,7 @@
+# app/services/email.py
+
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from pydantic import EmailStr
 from typing import Optional
 import os
 from dotenv import load_dotenv

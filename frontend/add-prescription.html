@@ -97,14 +97,14 @@
 <body>
   <aside class="sidebar">
     <a href="index.html" class="sidebar-logo">Medi<span>Cycle</span></a>
-    <a href="dashboard.html" class="nav-item">🏠 Dashboard</a>
-    <a href="dashboard.html" class="nav-item">💊 Medications</a>
+    <a href="Dashboard.html" class="nav-item">🏠 Dashboard</a>
+    <a href="Dashboard.html" class="nav-item">💊 Medications</a>
     <a href="add-prescription.html" class="nav-item active">➕ Add Medication</a>
-    <a href="payment.html" class="nav-item">💳 Payments</a>
+    <a href="Payment.html" class="nav-item">💳 Payments</a>
   </aside>
 
   <main class="main">
-    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+    <a href="Dashboard.html" class="back-btn">← Back to Dashboard</a>
     <h1 class="page-title">Add Medication</h1>
     <p class="page-sub">Add a chronic medication to start automated refill tracking.</p>
 
@@ -462,7 +462,7 @@ async function aiParseDocument(input) {
 
         showSuccess(`✅ ${medName} added successfully! ${selectedFile ? 'Document uploaded and tracking is now active.' : 'Add a prescription document to activate refill tracking.'}`);
         btn.innerHTML = '✅ Saved! Go to Dashboard →';
-        btn.onclick = () => window.location.href = 'dashboard.html';
+        btn.onclick = () => window.location.href = 'Dashboard.html';
         
       } catch (err) {
         showError(err.message);

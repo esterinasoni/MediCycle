@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MediCycle — Sign In</title>
+  <title>MediCycle â€” Sign In</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -67,14 +67,14 @@
           <div class="loading-meds">Loading medication examples...</div>
         </div>
       </div>
-      <p style="font-size:0.8rem; opacity:0.4;">Secured by Interswitch · Powered by Gemini AI</p>
+      <p style="font-size:0.8rem; opacity:0.4;">Secured by Interswitch Â· Powered by Gemini AI</p>
     </div>
 
     <div class="auth-right">
       <h3>Welcome back</h3>
-      <p class="sub">No account yet? <a href="register.html">Create one →</a></p>
+      <p class="sub">No account yet? <a href="register.html">Create one â†’</a></p>
 
-      <div class="verified-banner" id="verifiedBanner">✅ Account verified! Please sign in to continue.</div>
+      <div class="verified-banner" id="verifiedBanner">âœ… Account verified! Please sign in to continue.</div>
       <div class="error-msg" id="loginError"></div>
 
       <div class="form-group">
@@ -85,12 +85,12 @@
         <label>Password</label>
         <input type="password" id="password" placeholder="Your password"/>
       </div>
-      <button class="btn-submit" id="loginBtn" onclick="login()">Sign In →</button>
+      <button class="btn-submit" id="loginBtn" onclick="login()">Sign In â†’</button>
     </div>
   </div>
 
-  <script>
-    const API = window.location.origin;
+  <script>\n    // API URL from config.js or default\n    const API = window.API_URL || window.location.origin;\n    console.log("API URL:", API);
+    
     let rotateInterval;
 
     // Fetch sample medications from backend
@@ -126,7 +126,7 @@
         console.error('Error fetching sample medications:', error);
         medPreview.innerHTML = `
           <div class="error-meds">
-            ⚠️ Could not load examples<br/>
+            âš ï¸ Could not load examples<br/>
             <small>Check your connection</small>
           </div>
         `;
@@ -154,9 +154,9 @@
     function useLocalFallback() {
       // Fallback medication examples in case backend is not available
       const fallbackMeds = [
-        { name: "Amlodipine 5mg", tag: "✅", message: "18 days", tag_class: "tag-green" },
-        { name: "Metformin 500mg", tag: "⚠️", message: "4 days", tag_class: "tag-yellow" },
-        { name: "Lisinopril 10mg", tag: "🔴", message: "Auto-charging", tag_class: "tag-red" }
+        { name: "Amlodipine 5mg", tag: "âœ…", message: "18 days", tag_class: "tag-green" },
+        { name: "Metformin 500mg", tag: "âš ï¸", message: "4 days", tag_class: "tag-yellow" },
+        { name: "Lisinopril 10mg", tag: "ðŸ”´", message: "Auto-charging", tag_class: "tag-red" }
       ];
       
       const medPreview = document.getElementById('medPreview');
@@ -173,7 +173,7 @@
       document.getElementById('verifiedBanner').style.display = 'block';
     }
 
-    async function login() {
+    window.login = async function login() {
       const error = document.getElementById('loginError');
       error.style.display = 'none';
       const email = document.getElementById('email').value.trim();
@@ -208,7 +208,7 @@
         error.textContent = err.message;
         error.style.display = 'block';
         btn.disabled = false;
-        btn.innerHTML = 'Sign In →';
+        btn.innerHTML = 'Sign In â†’';
       }
     }
 

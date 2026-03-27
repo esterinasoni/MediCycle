@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MediCycle — Create Account</title>
+  <title>MediCycle â€” Create Account</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,7 +85,7 @@
       <div>
         <a href="index.html" class="logo">Medi<span>Cycle</span></a>
         <h2>Start your <em>automated</em> health journey today.</h2>
-        <p>Set up your medications once and MediCycle handles the rest — alerts, payments, delivery.</p>
+        <p>Set up your medications once and MediCycle handles the rest â€” alerts, payments, delivery.</p>
       </div>
       <div class="trust-items">
         <div class="trust-item"><div class="trust-icon"></div>Bank-grade security via Interswitch</div>
@@ -99,7 +99,7 @@
       <!-- STEP 1: REGISTER FORM -->
       <div id="registerStep">
         <h3>Create your account</h3>
-        <p class="sub">Already have one? <a href="login.html">Sign in →</a></p>
+        <p class="sub">Already have one? <a href="login.html">Sign in â†’</a></p>
         <div class="steps-indicator">
           <div class="step-dot active" id="dot1"></div>
           <div class="step-dot" id="dot2"></div>
@@ -130,7 +130,7 @@
           <div class="form-group"><label>Caregiver Phone</label><input type="tel" id="caregiverPhone" placeholder="e.g. 08098765432"/></div>
         </div>
 
-        <button class="btn-submit" id="registerBtn" onclick="register()">Create Account →</button>
+        <button class="btn-submit" id="registerBtn" onclick="register()">Create Account â†’</button>
       </div>
 
       <!-- STEP 2: OTP -->
@@ -153,13 +153,13 @@
           <input class="otp-input" maxlength="1" id="o6" oninput="otpNext(this,null)"/>
         </div>
         <p class="otp-info">Enter the 6-digit code sent to <strong id="otpEmail"></strong></p>
-        <button class="btn-submit" id="otpBtn" onclick="verifyOtp()">Verify & Continue →</button>
+        <button class="btn-submit" id="otpBtn" onclick="verifyOtp()">Verify & Continue â†’</button>
       </div>
     </div>
   </div>
 
-  <script>
-    const API = window.location.origin;
+  <script>\n    // API URL from config.js or default\n    const API = window.API_URL || window.location.origin;\n    console.log("API URL:", API);
+    
     let registeredEmail = '';
 
     function show(id) { document.getElementById(id).style.display = 'block'; }
@@ -167,7 +167,7 @@
     function showError(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; }
     function hideError(id) { document.getElementById(id).style.display = 'none'; }
 
-   async function register() {
+   window.register = async function register() {
     hideError('regError'); 
     hideError('regSuccess');
     
@@ -228,7 +228,7 @@
         const infoMsg = document.createElement('div');
         infoMsg.className = 'email-info';
         infoMsg.style.cssText = 'background:#e8f5ef;border-radius:8px;padding:0.75rem;margin-bottom:1rem;font-size:0.85rem;color:#0e6e4a;text-align:center;';
-        infoMsg.innerHTML = '📧 We\'ve sent a verification code to your email. Please check your inbox (and spam folder).';
+        infoMsg.innerHTML = 'ðŸ“§ We\'ve sent a verification code to your email. Please check your inbox (and spam folder).';
         otpStep.insertBefore(infoMsg, otpStep.firstChild);
         
         // Focus on first OTP input
@@ -244,7 +244,7 @@
         showError('regError', err.message);
     } finally {
         btn.disabled = false;
-        btn.innerHTML = 'Create Account →';
+        btn.innerHTML = 'Create Account â†’';
     }
 }
   </script>

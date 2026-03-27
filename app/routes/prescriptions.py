@@ -555,3 +555,78 @@ def get_sample_medications(db: Session = Depends(get_db)):
     else:
         # Fallback to static samples
         return get_static_samples()
+def get_static_samples():
+    """
+    Static sample medications for when no real prescriptions exist yet.
+    """
+    static_medications = [
+        {
+            "name": "Amlodipine 5mg",
+            "dosage": "5mg",
+            "days_left": 18,
+            "status": "good",
+            "tag": "[OK]",
+            "message": "18 days",
+            "tag_class": "tag-green",
+            "medication_name": "Amlodipine",
+            "frequency": 1,
+            "total_quantity": 18
+        },
+        {
+            "name": "Metformin 500mg",
+            "dosage": "500mg",
+            "days_left": 4,
+            "status": "warning",
+            "tag": "[WARN]",
+            "message": "4 days",
+            "tag_class": "tag-yellow",
+            "medication_name": "Metformin",
+            "frequency": 2,
+            "total_quantity": 8
+        },
+        {
+            "name": "Lisinopril 10mg",
+            "dosage": "10mg",
+            "days_left": 2,
+            "status": "critical",
+            "tag": "[!]",
+            "message": "Auto-charging",
+            "tag_class": "tag-red",
+            "medication_name": "Lisinopril",
+            "frequency": 1,
+            "total_quantity": 2
+        },
+        {
+            "name": "Losartan 50mg",
+            "dosage": "50mg",
+            "days_left": 25,
+            "status": "good",
+            "tag": "[OK]",
+            "message": "25 days",
+            "tag_class": "tag-green",
+            "medication_name": "Losartan",
+            "frequency": 1,
+            "total_quantity": 25
+        },
+        {
+            "name": "Atorvastatin 20mg",
+            "dosage": "20mg",
+            "days_left": 12,
+            "status": "good",
+            "tag": "[OK]",
+            "message": "12 days",
+            "tag_class": "tag-green",
+            "medication_name": "Atorvastatin",
+            "frequency": 1,
+            "total_quantity": 12
+        }
+    ]
+    
+    # Return 3 random static medications
+    import random
+    random.shuffle(static_medications)
+    return {
+        "medications": static_medications[:3],
+        "source": "static_samples",
+        "total_available": len(static_medications)
+    }

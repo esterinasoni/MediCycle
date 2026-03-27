@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+﻿from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -9,24 +9,25 @@ from app.models.user import User
 from dotenv import load_dotenv
 import os
 import random
-# from app.services.email import send_otp_email
-from app.services.email_simple import send_otp_email
-import asyncio
+import logging
 
 load_dotenv()
 
 router = APIRouter()
 
+# Setup logging
+logger = logging.getLogger(__name__)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
-# ── REQUEST MODELS ──
+# -- REQUEST MODELS --
 class RegisterRequest(BaseModel):
     full_name: str
-    email: str
+    email: EmailStr
     phone_number: str
     password: str
     caregiver_name: str = None
@@ -64,11 +65,18 @@ class UpdateProfileRequest(BaseModel):
     state: str = None
     landmark: str = None
 
-# ── HELPER FUNCTIONS ──
+# -- HELPER FUNCTIONS --
 def hash_password(password: str):
+    """Hash password with bcrypt, handling 72-byte limit"""
+    # Truncate to 72 bytes if needed (bcrypt limitation)
+    if len(password.encode('utf-8')) > 72:
+        password = password[:72]
     return pwd_context.hash(password)
 
 def verify_password(plain: str, hashed: str):
+    """Verify password with bcrypt, handling 72-byte limit"""
+    if len(plain.encode('utf-8')) > 72:
+        plain = plain[:72]
     return pwd_context.verify(plain, hashed)
 
 def create_access_token(data: dict):
@@ -80,7 +88,7 @@ def create_access_token(data: dict):
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-# ── GET CURRENT USER (reusable) ──
+# -- GET CURRENT USER (reusable) --
 def get_current_user(token: str, db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -95,15 +103,11 @@ def get_current_user(token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# ── ROUTES ──
+# -- ROUTES --
 
 # 1. REGISTER
 @router.post("/register")
-async def register(
-    request: RegisterRequest, 
-    db: Session = Depends(get_db)
-):
-    # Check existing user
+async def register(request: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == request.email).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -114,11 +118,9 @@ async def register(
     if existing_phone:
         raise HTTPException(status_code=400, detail="Phone number already registered")
 
-    # Generate OTP
-    otp = str(random.randint(100000, 999999))
+    otp = generate_otp()
     otp_expiry = datetime.utcnow() + timedelta(minutes=10)
 
-    # Create user
     new_user = User(
         full_name=request.full_name,
         email=request.email,
@@ -139,25 +141,19 @@ async def register(
     db.commit()
     db.refresh(new_user)
 
-    # Send OTP via email
+    # Try to send OTP email (optional)
     try:
+        from app.services.email_simple import send_otp_email
         first_name = request.full_name.split()[0] if request.full_name else None
         await send_otp_email(
             email=request.email,
             otp_code=otp,
             name=first_name
         )
-        print(f"[OK] OTP email sent to {request.email}")
+        logger.info(f"OTP email sent to {request.email}")
     except Exception as e:
-        print(f"[X] Failed to send OTP email: {e}")
-        # In production, you might want to retry or log this
-        # For now, we'll still return success but user won't get email
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to send verification email. Please try again."
-        )
+        logger.error(f"Failed to send OTP email: {e}")
 
-    # Return success WITHOUT OTP in response (security)
     return {
         "message": "Registration successful! Please check your email for the verification code.",
         "email": new_user.email
@@ -166,7 +162,6 @@ async def register(
 # 2. VERIFY OTP
 @router.post("/verify-otp")
 def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
-
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -189,52 +184,10 @@ def verify_otp(request: VerifyOTPRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Account verified successfully! You can now log in."}
-@router.post("/resend-otp")
-async def resend_otp(
-    email: str,
-    db: Session = Depends(get_db)
-):
-    """Resend OTP verification code"""
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if user.is_verified:
-        raise HTTPException(status_code=400, detail="Account already verified")
-    
-    # Rate limiting (optional)
-    # Check last OTP request time
-    if user.last_otp_request:
-        time_since_last = datetime.utcnow() - user.last_otp_request
-        if time_since_last.total_seconds() < 60:  # 1 minute cooldown
-            raise HTTPException(
-                status_code=429,
-                detail="Please wait 1 minute before requesting another code"
-            )
-    
-    # Generate new OTP
-    new_otp = str(random.randint(100000, 999999))
-    user.otp_code = new_otp
-    user.otp_expiry = datetime.utcnow() + timedelta(minutes=10)
-    user.last_otp_request = datetime.utcnow()
-    db.commit()
-    
-    # Send email
-    try:
-        first_name = user.full_name.split()[0] if user.full_name else None
-        await send_otp_email(email, new_otp, first_name)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to send verification email. Please try again."
-        )
-    
-    return {"message": "New verification code sent to your email"}
 
 # 3. LOGIN
 @router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -280,7 +233,7 @@ def update_location(
     db.commit()
 
     return {
-        "message": "Location updated successfully! [OK]",
+        "message": "Location updated successfully!",
         "delivery_address": {
             "address": user.address,
             "city": user.city,
@@ -319,7 +272,6 @@ def update_caregiver(
     token: str,
     db: Session = Depends(get_db)
 ):
-    """Add or update caregiver details (Req 1.1, 4.3, 7.1)"""
     user = get_current_user(token, db)
 
     user.caregiver_name = request.caregiver_name
@@ -327,7 +279,7 @@ def update_caregiver(
     db.commit()
 
     return {
-        "message": f"Caregiver {request.caregiver_name} added successfully! [OK]",
+        "message": f"Caregiver {request.caregiver_name} added successfully!",
         "caregiver": {
             "name": user.caregiver_name,
             "phone": mask_phone(user.caregiver_phone)
@@ -341,13 +293,11 @@ def update_profile(
     token: str,
     db: Session = Depends(get_db)
 ):
-    """Update any profile field"""
     user = get_current_user(token, db)
 
     if request.full_name is not None:
         user.full_name = request.full_name
     if request.phone_number is not None:
-        # Check phone not taken by another user
         existing = db.query(User).filter(
             User.phone_number == request.phone_number,
             User.id != user.id
@@ -371,7 +321,7 @@ def update_profile(
     db.commit()
 
     return {
-        "message": "Profile updated successfully! [OK]",
+        "message": "Profile updated successfully!",
         "profile": {
             "full_name": user.full_name,
             "phone_number": user.phone_number,
@@ -384,7 +334,7 @@ def update_profile(
         }
     }
 
-# ── HELPER ──
+# -- HELPER --
 def mask_phone(phone: str) -> str:
     if not phone or len(phone) < 7:
         return phone

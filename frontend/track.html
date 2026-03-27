@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MediCycle — Track Delivery</title>
+  <title>MediCycle â€” Track Delivery</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     /* Your existing CSS styles here (same as before) */
@@ -112,10 +112,10 @@
     <!-- NOT FOUND -->
     <div id="notFoundState" style="display:none;">
       <div class="not-found">
-        <div style="font-size:3rem;margin-bottom:1rem;">📦</div>
+        <div style="font-size:3rem;margin-bottom:1rem;">ðŸ“¦</div>
         <h2>Order Not Found</h2>
         <p>This tracking link is invalid or expired. Please check your SMS for the correct link.</p>
-        <a href="dashboard.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;">Go to Dashboard</a>
+        <a href="Dashboard.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;">Go to Dashboard</a>
       </div>
     </div>
 
@@ -124,20 +124,20 @@
 
       <!-- HEADER -->
       <div class="card-header">
-        <h1>📦 Delivery Tracking</h1>
+        <h1>ðŸ“¦ Delivery Tracking</h1>
         <p>Real-time status of your medication order</p>
-        <span class="order-ref" id="orderRef">Order #—</span>
+        <span class="order-ref" id="orderRef">Order #â€”</span>
       </div>
 
       <!-- MED INFO -->
       <div class="med-info">
-        <div class="med-icon">💊</div>
+        <div class="med-icon">ðŸ’Š</div>
         <div>
-          <div class="med-name" id="medName">—</div>
-          <div class="med-sub" id="medSub">—</div>
+          <div class="med-name" id="medName">â€”</div>
+          <div class="med-sub" id="medSub">â€”</div>
         </div>
         <div class="med-amount">
-          <div class="amount" id="medAmount">—</div>
+          <div class="amount" id="medAmount">â€”</div>
           <div class="label">Amount paid</div>
         </div>
       </div>
@@ -148,7 +148,7 @@
         <div class="steps">
 
           <div class="step done" id="stepPaid">
-            <div class="step-dot">✅</div>
+            <div class="step-dot">âœ…</div>
             <div class="step-content">
               <div class="step-label">Payment Confirmed</div>
               <div class="step-desc">Your payment was processed successfully via Interswitch.</div>
@@ -157,7 +157,7 @@
           </div>
 
           <div class="step" id="stepPreparing">
-            <div class="step-dot">📦</div>
+            <div class="step-dot">ðŸ“¦</div>
             <div class="step-content">
               <div class="step-label">Order Being Prepared</div>
               <div class="step-desc" id="descPreparing">The pharmacy is picking and packaging your medication.</div>
@@ -166,7 +166,7 @@
           </div>
 
           <div class="step pending" id="stepOut">
-            <div class="step-dot">🚚</div>
+            <div class="step-dot">ðŸšš</div>
             <div class="step-content">
               <div class="step-label">Out for Delivery</div>
               <div class="step-desc">Your medication is on its way to your delivery address.</div>
@@ -175,10 +175,10 @@
           </div>
 
           <div class="step pending" id="stepDelivered">
-            <div class="step-dot">🏠</div>
+            <div class="step-dot">ðŸ </div>
             <div class="step-content">
               <div class="step-label">Delivered</div>
-              <div class="step-desc">Medication delivered to your address. Take care! 💚</div>
+              <div class="step-desc">Medication delivered to your address. Take care! ðŸ’š</div>
               <div class="step-time" id="timeDelivered" style="display:none;"></div>
             </div>
           </div>
@@ -190,32 +190,32 @@
       <div class="pharmacy-info" id="pharmacySection">
         <div class="pharmacy-title">Fulfilling Pharmacy</div>
         <div class="pharmacy-card">
-          <div class="pharmacy-icon">🏥</div>
+          <div class="pharmacy-icon">ðŸ¥</div>
           <div>
             <div class="pharmacy-name" id="pharmacyName">Locating nearest pharmacy...</div>
-            <div class="pharmacy-addr" id="pharmacyAddr">—</div>
+            <div class="pharmacy-addr" id="pharmacyAddr">â€”</div>
           </div>
         </div>
       </div>
 
       <!-- DELIVERED BANNER -->
       <div class="delivered-banner" id="deliveredBanner">
-        <div class="icon">🎉</div>
+        <div class="icon">ðŸŽ‰</div>
         <h2>Delivered Successfully!</h2>
         <p>Your 30-day supply has been delivered. Your prescription cycle has been reset.</p>
       </div>
 
       <!-- ACTIONS -->
       <div class="actions">
-        <a href="dashboard.html" class="btn btn-outline">← Dashboard</a>
-        <a href="payment.html" class="btn btn-primary">View Payments</a>
+        <a href="Dashboard.html" class="btn btn-outline">â† Dashboard</a>
+        <a href="Payment.html" class="btn btn-primary">View Payments</a>
       </div>
 
     </div>
   </div>
 
   <p class="footer-note">
-    Need help? <a href="mailto:support@medicycle.app">support@medicycle.app</a> · <a href="index.html">MediCycle Home</a>
+    Need help? <a href="mailto:support@medicycle.app">support@medicycle.app</a> Â· <a href="index.html">MediCycle Home</a>
   </p>
 
   <script>
@@ -237,7 +237,7 @@
       
       // If no transaction ID, redirect to dashboard
       if (!transactionId) {
-        window.location.href = 'dashboard.html';
+        window.location.href = 'Dashboard.html';
         return;
       }
 
@@ -275,8 +275,8 @@
       
       // Update medication info
       document.getElementById('medName').textContent = data.medication_name || `Prescription #${data.prescription_id}`;
-      document.getElementById('medSub').textContent = `${data.dosage || 'Standard dosage'} · ${data.quantity || 30}-day supply`;
-      document.getElementById('medAmount').textContent = `₦${(data.amount / 100).toLocaleString()}`;
+      document.getElementById('medSub').textContent = `${data.dosage || 'Standard dosage'} Â· ${data.quantity || 30}-day supply`;
+      document.getElementById('medAmount').textContent = `â‚¦${(data.amount / 100).toLocaleString()}`;
 
       // Update payment time
       const paidTime = new Date(data.created_at);
@@ -292,7 +292,7 @@
       document.getElementById('pharmacyAddr').textContent = data.pharmacy_address || 'Loading delivery partner...';
       
       if (data.estimated_delivery) {
-        document.getElementById('pharmacyAddr').textContent += ` · Est. ${data.estimated_delivery}`;
+        document.getElementById('pharmacyAddr').textContent += ` Â· Est. ${data.estimated_delivery}`;
       }
 
       // Update delivery stages
@@ -391,4 +391,5 @@
   </script>
 </body>
 </html>
+
 

@@ -158,6 +158,25 @@ We are currently in the **MVP Build Phase**, focusing on:
 * Integrating payment workflows
 * Designing caregiver escalation system
 
+## Local Run
+
+The project is now split so the backend and frontend can run independently.
+
+Backend:
+```powershell
+cd backend
+pip install -r requirements.txt
+.\run_backend.ps1
+```
+
+Frontend:
+```powershell
+cd frontend
+.\run_frontend.ps1
+```
+
+Then open `http://127.0.0.1:3000` in your browser. The frontend calls `http://127.0.0.1:8000` by default.
+
 ## Future Scope (Post-MVP)
 
 To keep the MVP focused, several features are planned for future development:

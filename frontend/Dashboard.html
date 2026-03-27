@@ -152,7 +152,7 @@
         <div class="stat-card green"><div class="stat-label">Total Medications</div><div class="stat-value" id="statTotal">—</div><div class="stat-desc">Active prescriptions</div></div>
         <div class="stat-card red"><div class="stat-label">Needs Attention</div><div class="stat-value" id="statCritical">—</div><div class="stat-desc">Critical or warning</div></div>
         <div class="stat-card yellow"><div class="stat-label">Adherence Score</div><div class="stat-value" id="statAdherence">—</div><div class="stat-desc">Out of 100</div></div>
-        <div class="stat-card blue"><div class="stat-label">Auto-Refill</div><div class="stat-value" id="statAutorefill">ON</div><div class="stat-desc">Card saved</div></div>
+        <div class="stat-card blue"><div class="stat-label">Payment Card</div><div class="stat-value" id="statAutorefill">SAVED</div><div class="stat-desc">Ready for payments</div></div>
       </div>
       <div class="section-header">
         <h2 class="section-heading">Your Medications</h2>
@@ -226,7 +226,7 @@
           <h3 style="font-family:Fraunces,serif;font-size:1.1rem;margin-bottom:1.2rem;">✅ Account Setup Checklist</h3>
           <div style="display:flex;flex-direction:column;gap:0.8rem;">
             <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk1">⬜</span><span style="font-size:0.88rem;font-weight:500;">Account verified</span></div>
-            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk2">⬜</span><span style="font-size:0.88rem;font-weight:500;">Card saved for auto-refill</span></div>
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk2">⬜</span><span style="font-size:0.88rem;font-weight:500;">Payment card saved</span></div>
             <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk3">⬜</span><span style="font-size:0.88rem;font-weight:500;">Delivery address added</span></div>
             <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk4">⬜</span><span style="font-size:0.88rem;font-weight:500;">Caregiver contact added</span></div>
             <div style="display:flex;align-items:center;gap:0.75rem;padding:0.8rem 1rem;border-radius:10px;background:var(--cream);"><span id="chk5">⬜</span><span style="font-size:0.88rem;font-weight:500;">At least one medication added</span></div>
@@ -238,8 +238,9 @@
 
   </main>
 
+  <script src="config.js"></script>
   <script>
-    const API = window.location.origin;
+    const API = window.API_URL || 'http://127.0.0.1:8000';
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MediCycle — Add Medication</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="config.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --green: #0e6e4a; --green-light: #14a370; --green-pale: #e8f5ef; --cream: #faf8f3; --ink: #111a14; --mid: #4a6155; --accent: #f4a935; --red: #e84545; --sidebar: #0a4a32; }
@@ -208,7 +209,7 @@
   </main>
 
   <script>
-    const API = window.location.origin;
+    const API = window.API_URL || 'http://127.0.0.1:8000';
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MediCycle — Caregiver Payment</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="config.js"></script>
 
   <!-- ✅ Interswitch Inline Checkout SDK -->
   <script src="https://newwebpay.interswitchng.com/inline-checkout.js"></script>
@@ -184,7 +185,7 @@
   </p>
 
   <script>
-    const API = window.location.origin;;
+    const API = window.API_URL || 'http://127.0.0.1:8000';
 
     // ✅ Your Interswitch sandbox credentials
     const ISW_MERCHANT_CODE = 'MX276154';

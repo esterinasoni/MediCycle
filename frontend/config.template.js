@@ -2,7 +2,10 @@
 (function configureApiUrl() {
     const queryApiUrl = new URLSearchParams(window.location.search).get('api_url');
     const savedApiUrl = window.localStorage.getItem('mc_api_url');
-    const defaultApiUrl = 'http://127.0.0.1:8000';
+    const renderApiUrl = '__RENDER_BACKEND_URL__';
+    const defaultApiUrl = renderApiUrl !== '__RENDER_BACKEND_URL__'
+        ? renderApiUrl
+        : 'http://127.0.0.1:8000';
 
     if (queryApiUrl) {
         window.localStorage.setItem('mc_api_url', queryApiUrl);

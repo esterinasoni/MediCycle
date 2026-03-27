@@ -6,15 +6,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Get database URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost/medicycle")
+# Get database URL from environment.
+# Default to a local SQLite database so the backend can run without extra setup.
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./medicycle.db")
 
 # Fix for SQLAlchemy - replace postgres:// with postgresql://
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # Create engine
-engine = create_engine(DATABASE_URL)
+engine_kwargs = {}
+if DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

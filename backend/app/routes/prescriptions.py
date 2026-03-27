@@ -229,6 +229,12 @@ def get_my_prescriptions(token: str, db: Session = Depends(get_db)):
     }
 
 
+# Keep this static route above `/{prescription_id}` so it doesn't get parsed as an int.
+@router.get("/sample-medications")
+def get_sample_medications(db: Session = Depends(get_db)):
+    return build_sample_medications(db)
+
+
 # 4. GET SINGLE PRESCRIPTION
 @router.get("/{prescription_id}")
 def get_prescription(
@@ -504,10 +510,7 @@ def run_scheduler_now(token: str, db: Session = Depends(get_db)):
     thread = threading.Thread(target=run_check_now)
     thread.start()
     return {"message": "Scheduler triggered! Check your terminal for results. 🔍"}
-# In app/routes/prescriptions.py
-
-@router.get("/sample-medications")
-def get_sample_medications(db: Session = Depends(get_db)):
+def build_sample_medications(db: Session):
     """
     Get random active prescriptions from real users (for demo)
     """

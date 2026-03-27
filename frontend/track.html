@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MediCycle â€” Track Delivery</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="config.js"></script>
   <style>
     /* Your existing CSS styles here (same as before) */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,7 +97,7 @@
     /* Hide demo controls in production */
     .demo-controls { display: none; }
   </style>
-    <script src="config.js"></script>`n    </head>
+</head>
 <body>
 
   <a href="index.html" class="logo">Medi<span>Cycle</span></a>
@@ -219,7 +220,7 @@
   </p>
 
   <script>
-    const API = window.location.origin;
+    const API = window.API_URL || 'http://127.0.0.1:8000';
     const token = localStorage.getItem('mc_token');
     
     // Get transaction ID from URL
@@ -243,7 +244,7 @@
 
       try {
         // Fetch delivery tracking data
-        const res = await fetch(`${API}/delivery/track/${transactionId}?token=${token}`);
+        const res = await fetch(`${API}/payments/delivery/track/${transactionId}?token=${token}`);
         
         if (!res.ok) {
           if (res.status === 404) {

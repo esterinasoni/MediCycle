@@ -8,6 +8,7 @@
   <!-- ✅ Interswitch Inline Checkout SDK -->
   <script src="https://newwebpay.interswitchng.com/inline-checkout.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="config.js"></script>
 
   <style>
     /* Your existing styles here (keeping them the same) */
@@ -78,7 +79,7 @@
       .payment-grid { grid-template-columns: 1fr; }
     }
   </style>
-    <script src="config.js"></script>`n    </head>
+</head>
 <body>
   <aside class="sidebar">
     <a href="index.html" class="sidebar-logo">Medi<span>Cycle</span></a>
@@ -123,19 +124,19 @@
 
       <!-- AUTO REFILL STATUS -->
       <div class="card-section">
-        <h2 class="section-title">⚡ Auto-Refill Settings</h2>
+        <h2 class="section-title">⚡ Card Status</h2>
         <div style="background:var(--green-pale);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
-          <div style="font-weight:700;margin-bottom:0.5rem;color:var(--green);">🔄 Auto-Refill is Active</div>
-          <p style="font-size:0.88rem;color:var(--mid);line-height:1.6;">MediCycle will automatically charge your saved card when your medication supply runs out. You'll receive an SMS notification before each charge.</p>
+          <div style="font-weight:700;margin-bottom:0.5rem;color:var(--green);">💳 Card is Saved</div>
+          <p style="font-size:0.88rem;color:var(--mid);line-height:1.6;">Your payment method is stored securely and can be used when you choose to pay for a refill.</p>
         </div>
         <div style="display:flex;flex-direction:column;gap:0.75rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:var(--cream);border-radius:10px;">
-            <span style="font-size:0.88rem;font-weight:600;">Alert at 5 days remaining</span>
-            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ ON</span>
+            <span style="font-size:0.88rem;font-weight:600;">Card storage</span>
+            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ SAVED</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;background:var(--cream);border-radius:10px;">
-            <span style="font-size:0.88rem;font-weight:600;">Auto-charge at day 0</span>
-            <span style="color:var(--green);font-size:0.82rem;font-weight:700;">✅ ON</span>
+            <span style="font-size:0.88rem;font-weight:600;">Automatic charging</span>
+            <span style="color:#b87a00;font-size:0.82rem;font-weight:700;">⏸ OFF</span>
           </div>
         </div>
         <div style="margin-top:1.5rem;padding:1rem;background:#fff9e6;border-radius:10px;border:1px solid #ffe082;">
@@ -152,7 +153,7 @@
   </main>
 
   <script>
-   const API = window.location.origin;
+   const API = window.API_URL || 'http://127.0.0.1:8000';
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 
@@ -174,11 +175,11 @@
           showSavedCard('**** **** **** ****');
         } else {
           document.getElementById('cardDisplay').innerHTML =
-            `<div class="no-card"><div class="no-card-icon">💳</div><p>No card saved yet. Add one to enable auto-refill.</p></div>`;
+            `<div class="no-card"><div class="no-card-icon">💳</div><p>No card saved yet. Add one to speed up future refill payments.</p></div>`;
         }
       } catch(e) {
         document.getElementById('cardDisplay').innerHTML =
-          `<div class="no-card"><div class="no-card-icon">💳</div><p>Add your card to enable auto-refill payments.</p></div>`;
+          `<div class="no-card"><div class="no-card-icon">💳</div><p>Add your card to save a payment method for later.</p></div>`;
       }
     }
 
@@ -187,12 +188,12 @@
         <div class="saved-card">
           <div class="card-chip">💳</div>
           <div class="card-number">${masked || '**** **** **** ****'}</div>
-          <div class="card-label">Saved for auto-refill</div>
+          <div class="card-label">Saved payment method</div>
           <div class="card-status">Active · Interswitch Secured</div>
         </div>`;
       document.getElementById('cardForm').innerHTML = `
         <div style="text-align:center;padding:1rem;color:var(--mid);font-size:0.9rem;">
-          <p>✅ Card saved — Auto-refill is active</p>
+          <p>✅ Card saved and ready for future payments</p>
           <button onclick="loadCardForm()" style="background:none;border:none;color:var(--green);font-size:0.85rem;cursor:pointer;font-weight:600;margin-top:0.5rem;">
             Replace card →
           </button>
@@ -292,7 +293,7 @@
         const maskedCard = data.card_masked || '**** **** **** ****';
         showSavedCard(maskedCard);
         
-        success.textContent = '✅ Card saved successfully! Auto-refill is now active.';
+        success.textContent = '✅ Card saved successfully.';
         success.style.display = 'block';
         
         // Refresh transaction history
@@ -304,7 +305,7 @@
         // If there's an error but payment was successful, still show card as saved
         // You might want to retry or show a warning
         showSavedCard('**** **** **** ****');
-        success.textContent = '⚠️ Card added but verification pending. Auto-refill will be available shortly.';
+        success.textContent = '⚠️ Card added but verification is still pending.';
         success.style.display = 'block';
         
       } finally {
@@ -336,7 +337,7 @@
         const list = document.getElementById('txList');
 
         if (!data.transactions || data.transactions.length === 0) {
-          list.innerHTML = '<div class="empty-state">💳<br/><br/>No transactions yet.<br/><span style="font-size:0.85rem">Auto-refill charges will appear here.</span></div>';
+          list.innerHTML = '<div class="empty-state">💳<br/><br/>No transactions yet.<br/><span style="font-size:0.85rem">Your payment history will appear here.</span></div>';
           return;
         }
 

@@ -152,7 +152,7 @@
   </main>
 
   <script>
-    const API = 'https://medicycle.onrender.com/api/v1';
+   const API = window.location.origin;
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 

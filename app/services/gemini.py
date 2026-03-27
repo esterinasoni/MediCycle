@@ -12,14 +12,14 @@ try:
     GEMINI_AVAILABLE = True
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     MODEL = "gemini-2.0-flash-lite"
-    print("? Google Gemini loaded successfully")
+    print("Google Gemini loaded successfully")
 except ImportError as e:
     GEMINI_AVAILABLE = False
-    print(f"?? Google Gemini not available: {e}")
+    print(f"Google Gemini not available: {e}")
     print("AI parsing features will be disabled")
 except Exception as e:
     GEMINI_AVAILABLE = False
-    print(f"?? Error loading Gemini: {e}")
+    print(f"Error loading Gemini: {e}")
 
 def parse_prescription_text(text: str) -> dict:
     """
@@ -27,7 +27,6 @@ def parse_prescription_text(text: str) -> dict:
     Falls back to simple parsing if Gemini not available.
     """
     if not GEMINI_AVAILABLE:
-        # Simple fallback parsing
         return fallback_parse_text(text)
     
     prompt = f"""
@@ -114,67 +113,14 @@ def fallback_parse_text(text: str) -> dict:
 
 def parse_prescription_image(image_path: str) -> dict:
     """
-    Use Gemini Vision to extract medication details from images.
+    Parse prescription image - requires Pillow which may not be installed
     """
-    if not GEMINI_AVAILABLE:
-        return {"success": False, "error": "Gemini AI not available for image parsing", "data": {}}
-    
-    try:
-        with open(image_path, "rb") as f:
-            image_bytes = f.read()
-
-        ext = image_path.split(".")[-1].lower()
-        mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "pdf": "application/pdf"}
-        mime_type = mime_map.get(ext, "image/jpeg")
-
-        prompt = """
-        You are a medical prescription parser for MediCycle, a Nigerian medication refill platform.
-        
-        Look at this prescription image and extract medication information.
-        Return ONLY a JSON object with no explanation or markdown.
-        
-        Extract:
-        - medication_name: the drug name
-        - dosage: strength/dose (e.g. "5mg", "500mg")
-        - frequency: how many times per day as a number
-        - total_quantity: total pills/units as a number
-        - duration_days: days supply as a number
-        - instructions: special instructions
-        - doctor_name: prescribing doctor if visible
-        - prescription_date: date if visible (YYYY-MM-DD format)
-        
-        If a field cannot be found, use null.
-        
-        Return only this JSON format:
-        {
-            "medication_name": "...",
-            "dosage": "...",
-            "frequency": 1,
-            "total_quantity": 30,
-            "duration_days": 30,
-            "instructions": "...",
-            "doctor_name": "...",
-            "prescription_date": "..."
-        }
-        """
-
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=[
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
-                prompt
-            ]
-        )
-
-        raw = response.text.strip()
-        raw = re.sub(r"```json|```", "", raw).strip()
-        data = json.loads(raw)
-        return {"success": True, "data": data}
-
-    except json.JSONDecodeError:
-        return {"success": False, "error": "Could not parse Gemini response as JSON"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    # Return error since Pillow is not installed
+    return {
+        "success": False, 
+        "error": "Image parsing requires Pillow which is not installed on this server. Please use text input or upload PDF.",
+        "data": {}
+    }
 
 
 def get_medication_info(medication_name: str) -> dict:
@@ -208,7 +154,7 @@ def get_medication_info(medication_name: str) -> dict:
     }}
     
     Keep each field under 50 words. Use simple language a patient can understand.
-    Do NOT provide dosage recommendations � that is the doctor's job.
+    Do NOT provide dosage recommendations — that is the doctor's job.
     """
 
     try:
@@ -234,7 +180,7 @@ def generate_adherence_tip(
     Generate a personalized adherence tip.
     """
     if not GEMINI_AVAILABLE:
-        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! ??"
+        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! [PILL]"
     
     prompt = f"""
     Write a single short, friendly SMS message (max 100 characters) 
@@ -251,4 +197,4 @@ def generate_adherence_tip(
         )
         return response.text.strip()
     except Exception as e:
-        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! ??"
+        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! [PILL]"

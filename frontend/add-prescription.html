@@ -92,7 +92,7 @@
       .form-row { grid-template-columns: 1fr; }
     }
   </style>
-</head>
+    <script src="config.js"></script>`n    </head>
 <body>
   <aside class="sidebar">
     <a href="index.html" class="sidebar-logo">Medi<span>Cycle</span></a>
@@ -208,7 +208,7 @@
   </main>
 
   <script>
-    const API = 'http://127.0.0.1:8000';
+    const API = window.location.origin;
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 
@@ -492,3 +492,4 @@ async function aiParseDocument(input) {
   </script>
 </body>
 </html>
+

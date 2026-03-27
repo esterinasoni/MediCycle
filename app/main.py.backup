@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base
 from app.routes import auth, prescriptions, payments
-import os
 
 # Import all models so tables are created
 from app.models import user, prescription, transaction, refill_history
@@ -15,7 +13,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="MediCycle API",
-    description="Automated medication refill platform - Enyata x Interswitch Buildathon 2026",
+    description="Automated medication refill platform — Enyata x Interswitch Buildathon 2026",
     version="1.0.0"
 )
 
@@ -33,13 +31,6 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(prescriptions.router, prefix="/prescriptions", tags=["Prescriptions"])
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
 
-# Serve static frontend files
-frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
-    print(f"Frontend files served from {frontend_path}")
-else:
-    print(f"Frontend folder not found at {frontend_path}")
 
 @app.on_event("startup")
 async def startup_event():
@@ -67,10 +58,9 @@ async def shutdown_event():
 @app.get("/")
 def root():
     return {
-        "message": "MediCycle API is running!",
+        "message": "💊 MediCycle API is running!",
         "version": "1.0.0",
-        "status": "healthy",
-        "frontend": "Visit /register.html to get started"
+        "status": "healthy"
     }
 
 

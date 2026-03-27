@@ -112,7 +112,7 @@
       .current-time { display: none; }
     }
   </style>
-</head>
+    <script src="config.js"></script>`n    </head>
 <body>
 
   <aside class="sidebar">
@@ -239,7 +239,7 @@
   </main>
 
   <script>
-    const API = 'http://127.0.0.1:8000';
+    const API = window.location.origin;
     const token = localStorage.getItem('mc_token');
     if (!token) window.location.href = 'login.html';
 
@@ -540,3 +540,4 @@
   </script>
 </body>
 </html>
+

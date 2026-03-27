@@ -55,7 +55,7 @@
       body { padding: 1rem; align-items: flex-start; }
     }
   </style>
-</head>
+    <script src="config.js"></script>`n    </head>
 <body>
   <div class="auth-container">
     <div class="auth-left">
@@ -90,7 +90,7 @@
   </div>
 
   <script>
-    const API = 'http://127.0.0.1:8000';
+    const API = window.location.origin;
     let rotateInterval;
 
     // Fetch sample medications from backend
@@ -224,3 +224,4 @@
   </script>
 </body>
 </html>
+

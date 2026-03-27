@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 import os
 from dotenv import load_dotenv
 
@@ -18,6 +19,12 @@ if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
 engine_kwargs = {}
 if DATABASE_URL.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    engine_kwargs["pool_pre_ping"] = True
+
+    # Supabase pooler/Supavisor works best with SQLAlchemy NullPool.
+    if "pooler.supabase.com" in DATABASE_URL:
+        engine_kwargs["poolclass"] = NullPool
 
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

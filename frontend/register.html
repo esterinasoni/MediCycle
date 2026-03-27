@@ -38,10 +38,6 @@
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     .error-msg { background: #fff0f0; border: 1px solid #ffcdd2; color: var(--red); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
     .success-msg { background: var(--green-pale); border: 1px solid #b2dfcc; color: var(--green); padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1rem; display: none; }
-    .otp-step { display: none; }
-    .otp-inputs { display: flex; gap: 0.75rem; justify-content: center; margin: 1.5rem 0; }
-    .otp-input { width: 52px; height: 60px; text-align: center; font-size: 1.5rem; font-weight: 700; border: 2px solid #e0e8e4; border-radius: 12px; outline: none; }
-    .otp-input:focus { border-color: var(--green); }
     .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 700px) { .auth-container { grid-template-columns: 1fr; } .auth-left { display: none; } body { padding: 1rem; } }
@@ -91,27 +87,11 @@
 
         <button class="btn-submit" id="registerBtn">Create Account</button>
       </div>
-
-      <div class="otp-step" id="otpStep">
-        <h3>Verify your account</h3>
-        <p class="sub">We sent a 6-digit code to <strong id="otpEmail"></strong></p>
-        <div id="otpError" class="error-msg"></div>
-        <div class="otp-inputs">
-          <input class="otp-input" maxlength="1" id="o1"/>
-          <input class="otp-input" maxlength="1" id="o2"/>
-          <input class="otp-input" maxlength="1" id="o3"/>
-          <input class="otp-input" maxlength="1" id="o4"/>
-          <input class="otp-input" maxlength="1" id="o5"/>
-          <input class="otp-input" maxlength="1" id="o6"/>
-        </div>
-        <button class="btn-submit" id="otpBtn">Verify Account</button>
-      </div>
     </div>
   </div>
 
   <script>
     const API = window.API_URL || window.location.origin;
-    let registeredEmail = '';
 
     function showError(id, msg) {
       const el = document.getElementById(id);
@@ -130,20 +110,6 @@
         setTimeout(() => el.style.display = 'none', 5000);
       }
     }
-
-    function otpNext(el, nextId) {
-      if (el.value.length === 1 && nextId) {
-        document.getElementById(nextId).focus();
-      }
-    }
-
-    // Add OTP input handlers
-    document.getElementById('o1').oninput = function() { otpNext(this, 'o2'); };
-    document.getElementById('o2').oninput = function() { otpNext(this, 'o3'); };
-    document.getElementById('o3').oninput = function() { otpNext(this, 'o4'); };
-    document.getElementById('o4').oninput = function() { otpNext(this, 'o5'); };
-    document.getElementById('o5').oninput = function() { otpNext(this, 'o6'); };
-    document.getElementById('o6').oninput = function() { otpNext(this, null); };
 
     document.getElementById('registerBtn').onclick = async function() {
       const btn = this;
@@ -190,53 +156,22 @@
           throw new Error(data.detail || 'Registration failed');
         }
 
-        registeredEmail = email;
-        document.getElementById('otpEmail').textContent = email;
-        document.getElementById('registerStep').style.display = 'none';
-        document.getElementById('otpStep').style.display = 'block';
+        showSuccess('regSuccess', 'Account created successfully! Redirecting to login...');
         
-        showSuccess('regSuccess', 'Check your email for verification code');
-        document.getElementById('o1').focus();
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 2000);
         
       } catch (err) {
         showError('regError', err.message);
-      } finally {
         btn.disabled = false;
         btn.innerHTML = 'Create Account';
       }
     };
 
-    document.getElementById('otpBtn').onclick = async function() {
-      const otp = [1,2,3,4,5,6].map(i => document.getElementById(`o${i}`).value).join('');
-      if (otp.length < 6) return showError('otpError', 'Please enter the 6-digit code');
-      
-      const btn = this;
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading"></span>Verifying...';
-
-      try {
-        const res = await fetch(`${API}/auth/verify-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: registeredEmail, otp_code: otp })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Verification failed');
-        window.location.href = 'login.html?verified=1';
-      } catch (err) {
-        showError('otpError', err.message);
-        btn.disabled = false;
-        btn.innerHTML = 'Verify Account';
-      }
-    };
-
     document.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
-        if (document.getElementById('registerStep').style.display !== 'none') {
-          document.getElementById('registerBtn').click();
-        } else {
-          document.getElementById('otpBtn').click();
-        }
+        document.getElementById('registerBtn').click();
       }
     });
   </script>

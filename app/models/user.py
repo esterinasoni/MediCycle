@@ -26,7 +26,7 @@ class User(Base):
     state = Column(String, nullable=True)
     landmark = Column(String, nullable=True)
 
-    # Interswitch token — NEVER store raw card number
+    # Interswitch token -- NEVER store raw card number
     interswitch_token = Column(String, nullable=True)
     token_expiry_date = Column(String, nullable=True)
 

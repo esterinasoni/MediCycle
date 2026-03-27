@@ -147,9 +147,9 @@ async def register(
             otp_code=otp,
             name=first_name
         )
-        print(f"✅ OTP email sent to {request.email}")
+        print(f"[OK] OTP email sent to {request.email}")
     except Exception as e:
-        print(f"❌ Failed to send OTP email: {e}")
+        print(f"[X] Failed to send OTP email: {e}")
         # In production, you might want to retry or log this
         # For now, we'll still return success but user won't get email
         raise HTTPException(
@@ -280,7 +280,7 @@ def update_location(
     db.commit()
 
     return {
-        "message": "Location updated successfully! ✅",
+        "message": "Location updated successfully! [OK]",
         "delivery_address": {
             "address": user.address,
             "city": user.city,
@@ -327,7 +327,7 @@ def update_caregiver(
     db.commit()
 
     return {
-        "message": f"Caregiver {request.caregiver_name} added successfully! ✅",
+        "message": f"Caregiver {request.caregiver_name} added successfully! [OK]",
         "caregiver": {
             "name": user.caregiver_name,
             "phone": mask_phone(user.caregiver_phone)
@@ -371,7 +371,7 @@ def update_profile(
     db.commit()
 
     return {
-        "message": "Profile updated successfully! ✅",
+        "message": "Profile updated successfully! [OK]",
         "profile": {
             "full_name": user.full_name,
             "phone_number": user.phone_number,

@@ -64,7 +64,7 @@ def seed_pharmacies(db: Session):
     for p in pharmacies:
         db.add(p)
     db.commit()
-    print("[MediCycle] ✅ Mock pharmacies seeded successfully!")
+    print("[MediCycle] [OK] Mock pharmacies seeded successfully!")
 
 
 # ── SMART ROUTING LOGIC ──
@@ -109,7 +109,7 @@ def find_nearest_pharmacy(
         if _is_in_stock(pharmacy.id, medication_name, db):
             return pharmacy
 
-    # Priority 4: Any pharmacy (ignore stock — last resort)
+    # Priority 4: Any pharmacy (ignore stock -- last resort)
     return all_pharmacies[0] if all_pharmacies else None
 
 
@@ -152,7 +152,7 @@ def handle_out_of_stock(
             "pharmacy": backup,
             "sms_message": (
                 f"Medication secured at {backup.name} due to stock availability "
-                f"at your primary location. Delivery is still on track. 🚚"
+                f"at your primary location. Delivery is still on track. [TRUCK]"
             )
         }
 

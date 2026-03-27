@@ -147,7 +147,7 @@ def charge_patient(
 ):
     """
     Charge saved card token. 
-    ⚠️  HTTP 200 is NOT enough — always check responseCode == "00".
+    [!]  HTTP 200 is NOT enough -- always check responseCode == "00".
     """
     try:
         access_token = get_access_token()
@@ -178,7 +178,7 @@ def charge_patient(
         data = response.json()
         response_code = data.get("responseCode") or data.get("ResponseCode", "")
 
-        # ✅ HTTP 200 + responseCode "00" = genuine success
+        # [OK] HTTP 200 + responseCode "00" = genuine success
         if response.status_code in [200, 201] and response_code == "00":
             return {
                 "success": True,

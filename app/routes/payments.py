@@ -35,7 +35,7 @@ def _do_charge(
     customer_id: str,
     prescription_id: int
 ) -> dict:
-    """Single charge helper — respects USE_MOCK flag."""
+    """Single charge helper -- respects USE_MOCK flag."""
     if USE_MOCK:
         return mock_charge_success(amount_kobo, prescription_id)
     return charge_patient(
@@ -61,7 +61,7 @@ def save_card(
         user.token_expiry_date = "2612"
         db.commit()
         return {
-            "message": "Card saved successfully! ✅",
+            "message": "Card saved successfully! [OK]",
             "mode": "SANDBOX",
             "card_masked": "**** **** **** 1234",
             "token_saved": True
@@ -75,7 +75,7 @@ def save_card(
     user.token_expiry_date = result["token_expiry"]
     db.commit()
 
-    return {"message": "Card saved successfully! ✅", "token_saved": True}
+    return {"message": "Card saved successfully! [OK]", "token_saved": True}
 
 
 # ── 2. CHARGE PATIENT (self) ──
@@ -136,7 +136,7 @@ def charge_refill(
     db.commit()
 
     return {
-        "message": f"Payment successful! ₦{result['amount_naira']:,.2f} charged. 💊",
+        "message": f"Payment successful! ₦{result['amount_naira']:,.2f} charged. [PILL]",
         "transaction_id": transaction.id,
         "reference": result["reference"],
         "amount": f"₦{result['amount_naira']:,.2f}",
@@ -241,7 +241,7 @@ def update_delivery(
     db.commit()
 
     return {
-        "message": f"Delivery status updated to: {status} ✅",
+        "message": f"Delivery status updated to: {status} [OK]",
         "transaction_id": transaction_id,
         "delivery_status": status
     }
@@ -317,7 +317,7 @@ def caregiver_charge(
     db.commit()
     db.refresh(transaction)
 
-    # ✅ Now respects USE_MOCK — was always calling mock before
+    # [OK] Now respects USE_MOCK -- was always calling mock before
     result = _do_charge(
         user_token=card_data,       # caregiver provides card data directly
         token_expiry="",            # handled inside charge_patient for live
@@ -341,8 +341,8 @@ def caregiver_charge(
 
     send_sms(
         patient.phone_number,
-        f"✅ Great news! {caregiver_name} has paid for your {prescription.medication_name} refill. "
-        f"Your 30-day supply is on the way! 💊"
+        f"[OK] Great news! {caregiver_name} has paid for your {prescription.medication_name} refill. "
+        f"Your 30-day supply is on the way! [PILL]"
     )
     route_to_pharmacy(prescription, patient, transaction, db)
 
@@ -415,13 +415,13 @@ def request_refill(
 
     send_sms(
         user.phone_number,
-        f"✅ Refill confirmed for {prescription.medication_name}! "
-        f"₦{result['amount_naira']:,.0f} charged. Your order is being prepared. 💊"
+        f"[OK] Refill confirmed for {prescription.medication_name}! "
+        f"₦{result['amount_naira']:,.0f} charged. Your order is being prepared. [PILL]"
     )
     route_to_pharmacy(prescription, user, transaction, db)
 
     return {
-        "message": "Refill requested successfully! ✅",
+        "message": "Refill requested successfully! [OK]",
         "prescription": prescription.medication_name,
         "amount_charged": f"₦{result['amount_naira']:,.0f}",
         "reference": result["reference"],

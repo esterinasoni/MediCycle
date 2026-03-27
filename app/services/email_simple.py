@@ -97,9 +97,9 @@ async def send_otp_email(email: str, otp_code: str, name: str = None):
                 <p style="color: rgba(255,255,255,0.9); margin-top: 8px;">Your Health, Automated</p>
             </div>
             <div class="content">
-                <h2 style="margin-bottom: 8px;">Welcome to MediCycle! 👋</h2>
+                <h2 style="margin-bottom: 8px;">Welcome to MediCycle! [WAVE]</h2>
                 <p>Hi {name or 'there'},</p>
-                <p>Thank you for signing up for MediCycle — your automated medication refill platform.</p>
+                <p>Thank you for signing up for MediCycle -- your automated medication refill platform.</p>
                 <p>To complete your registration, please verify your email address using the code below:</p>
                 
                 <div class="otp-code">
@@ -109,14 +109,14 @@ async def send_otp_email(email: str, otp_code: str, name: str = None):
                 </div>
                 
                 <div class="warning">
-                    ⚠️ <strong>Security Notice:</strong> Never share this code with anyone. MediCycle will never ask for this code outside of this verification process.
+                    [!] <strong>Security Notice:</strong> Never share this code with anyone. MediCycle will never ask for this code outside of this verification process.
                 </div>
                 
                 <p style="margin-top: 24px;">If you didn't create this account, please ignore this email.</p>
                 <p>Need help? <a href="mailto:support@medicycle.com" style="color: #0e6e4a;">Contact Support</a></p>
             </div>
             <div class="footer">
-                <p>MediCycle — Making medication management effortless.</p>
+                <p>MediCycle -- Making medication management effortless.</p>
                 <p>&copy; 2024 MediCycle. All rights reserved.</p>
             </div>
         </div>
@@ -135,12 +135,12 @@ async def send_otp_email(email: str, otp_code: str, name: str = None):
     
     If you didn't create this account, please ignore this email.
     
-    MediCycle — Your Health, Automated
+    MediCycle -- Your Health, Automated
     """
     
     # Create message
     message = MIMEMultipart("alternative")
-    message["Subject"] = "🔐 Verify Your MediCycle Account"
+    message["Subject"] = "[LOCK] Verify Your MediCycle Account"
     message["From"] = f"{FROM_NAME} <{FROM_EMAIL}>"
     message["To"] = email
     
@@ -155,10 +155,10 @@ async def send_otp_email(email: str, otp_code: str, name: str = None):
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(message)
         server.quit()
-        print(f"✅ OTP email sent to {email}")
+        print(f"[OK] OTP email sent to {email}")
         return True
     except Exception as e:
-        print(f"❌ Failed to send email: {e}")
+        print(f"[X] Failed to send email: {e}")
         raise e
 
 async def send_test_email(email: str):
@@ -173,7 +173,7 @@ async def send_test_email(email: str):
     <body style="font-family: Arial, sans-serif;">
         <div style="max-width: 500px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #0e6e4a;">MediCycle Test Email</h2>
-            <p>If you're reading this, your email configuration is working correctly! ✅</p>
+            <p>If you're reading this, your email configuration is working correctly! [OK]</p>
             <p>Your SMTP settings are properly configured.</p>
             <hr>
             <p style="color: #4a6155; font-size: 12px;">MediCycle - Making medication management effortless.</p>
@@ -185,7 +185,7 @@ async def send_test_email(email: str):
     text_content = """
     MediCycle Test Email
     
-    If you're reading this, your email configuration is working correctly! ✅
+    If you're reading this, your email configuration is working correctly! [OK]
     
     Your SMTP settings are properly configured.
     
@@ -205,8 +205,8 @@ async def send_test_email(email: str):
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(message)
         server.quit()
-        print(f"✅ Test email sent to {email}")
+        print(f"[OK] Test email sent to {email}")
         return True
     except Exception as e:
-        print(f"❌ Failed to send test email: {e}")
+        print(f"[X] Failed to send test email: {e}")
         raise e

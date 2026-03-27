@@ -1,20 +1,35 @@
-from google import genai
-from google.genai import types
-from dotenv import load_dotenv
 import os
 import json
 import re
+from dotenv import load_dotenv
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-MODEL = "gemini-2.0-flash-lite"
+# Try to import Google Gemini
+try:
+    from google import genai
+    from google.genai import types
+    GEMINI_AVAILABLE = True
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+    MODEL = "gemini-2.0-flash-lite"
+    print("? Google Gemini loaded successfully")
+except ImportError as e:
+    GEMINI_AVAILABLE = False
+    print(f"?? Google Gemini not available: {e}")
+    print("AI parsing features will be disabled")
+except Exception as e:
+    GEMINI_AVAILABLE = False
+    print(f"?? Error loading Gemini: {e}")
 
 def parse_prescription_text(text: str) -> dict:
     """
-    Use Gemini to extract medication details from
-    raw prescription text (typed or OCR'd from image).
+    Use Gemini to extract medication details from prescription text.
+    Falls back to simple parsing if Gemini not available.
     """
+    if not GEMINI_AVAILABLE:
+        # Simple fallback parsing
+        return fallback_parse_text(text)
+    
     prompt = f"""
     You are a medical prescription parser for MediCycle, a Nigerian medication refill platform.
     
@@ -61,11 +76,49 @@ def parse_prescription_text(text: str) -> dict:
         return {"success": False, "error": str(e)}
 
 
+def fallback_parse_text(text: str) -> dict:
+    """
+    Simple fallback parsing when Gemini is not available
+    """
+    data = {
+        "medication_name": None,
+        "dosage": None,
+        "frequency": None,
+        "total_quantity": None,
+        "duration_days": None,
+        "instructions": None
+    }
+    
+    # Simple regex patterns for fallback
+    patterns = {
+        "medication_name": r'(?:medication|medicine|drug|rx)[:\s]+([A-Za-z]+)',
+        "dosage": r'(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml)',
+        "frequency": r'(\d+)\s*(?:times?|x)\s*(?:daily|per day|day)',
+        "total_quantity": r'(?:quantity|qty|dispense)[:\s]+(\d+)',
+        "duration_days": r'(\d+)\s*(?:days?|day)'
+    }
+    
+    for key, pattern in patterns.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            if key == "frequency" or key == "total_quantity" or key == "duration_days":
+                try:
+                    data[key] = int(match.group(1))
+                except:
+                    pass
+            else:
+                data[key] = match.group(1)
+    
+    return {"success": True, "data": data}
+
+
 def parse_prescription_image(image_path: str) -> dict:
     """
-    Use Gemini Vision to extract medication details
-    directly from a prescription image/photo.
+    Use Gemini Vision to extract medication details from images.
     """
+    if not GEMINI_AVAILABLE:
+        return {"success": False, "error": "Gemini AI not available for image parsing", "data": {}}
+    
     try:
         with open(image_path, "rb") as f:
             image_bytes = f.read()
@@ -127,8 +180,19 @@ def parse_prescription_image(image_path: str) -> dict:
 def get_medication_info(medication_name: str) -> dict:
     """
     Use Gemini to get general info about a medication.
-    Helps patients understand their prescription.
     """
+    if not GEMINI_AVAILABLE:
+        return {
+            "success": False,
+            "data": {
+                "generic_name": "Information unavailable",
+                "common_use": "Please consult your healthcare provider",
+                "important_notes": "AI service not available at this time",
+                "common_side_effects": "Ask your pharmacist for details",
+                "storage": "Store as directed on the prescription label"
+            }
+        }
+    
     prompt = f"""
     You are a helpful medical assistant for MediCycle, a Nigerian medication refill platform.
     
@@ -144,7 +208,7 @@ def get_medication_info(medication_name: str) -> dict:
     }}
     
     Keep each field under 50 words. Use simple language a patient can understand.
-    Do NOT provide dosage recommendations — that is the doctor's job.
+    Do NOT provide dosage recommendations � that is the doctor's job.
     """
 
     try:
@@ -167,9 +231,11 @@ def generate_adherence_tip(
     frequency: float
 ) -> str:
     """
-    Generate a personalized adherence tip for the patient.
-    Used in SMS notifications.
+    Generate a personalized adherence tip.
     """
+    if not GEMINI_AVAILABLE:
+        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! ??"
+    
     prompt = f"""
     Write a single short, friendly SMS message (max 100 characters) 
     reminding a patient to take their {medication_name} ({frequency}x daily).
@@ -185,4 +251,4 @@ def generate_adherence_tip(
         )
         return response.text.strip()
     except Exception as e:
-        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! 💊"
+        return f"Reminder: Take your {medication_name} as prescribed. Stay consistent! ??"

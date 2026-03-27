@@ -10,23 +10,23 @@ def calculate_adherence_score(patient_id: int, db: Session) -> dict:
     based on their refill history.
 
     Score interpretation:
-    - 80-100: Excellent — alerts at Day 5
-    - 60-79:  Good — alerts at Day 6
-    - 40-59:  Fair — alerts at Day 7
-    - 0-39:   Poor — alerts at Day 8 (consistently late)
+    - 80-100: Excellent -- alerts at Day 5
+    - 60-79:  Good -- alerts at Day 6
+    - 40-59:  Fair -- alerts at Day 7
+    - 0-39:   Poor -- alerts at Day 8 (consistently late)
     """
     history = db.query(RefillHistory).filter(
         RefillHistory.patient_id == patient_id
     ).order_by(RefillHistory.created_at.desc()).limit(10).all()
 
-    # Not enough history — return default
+    # Not enough history -- return default
     if len(history) < 2:
         return {
             "score": 75,
             "level": "Good",
             "alert_threshold_days": 5,
             "data_points": len(history),
-            "message": "Insufficient history — using default threshold"
+            "message": "Insufficient history -- using default threshold"
         }
 
     # Calculate average days variance
@@ -86,7 +86,7 @@ def get_smart_threshold(patient_id: int, db: Session) -> int:
     """
     Get the smart alert threshold for a patient.
     Used by the scheduler to decide when to send alerts.
-    Default is 5 days — adjusted based on adherence score.
+    Default is 5 days -- adjusted based on adherence score.
     """
     result = calculate_adherence_score(patient_id, db)
     return result["alert_threshold_days"]

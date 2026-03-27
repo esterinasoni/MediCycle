@@ -114,9 +114,9 @@
 #                 <p style="color: rgba(255,255,255,0.9); margin-top: 8px;">Your Health, Automated</p>
 #             </div>
 #             <div class="content">
-#                 <h2 style="margin-bottom: 8px;">Welcome to MediCycle! 👋</h2>
+#                 <h2 style="margin-bottom: 8px;">Welcome to MediCycle! [WAVE]</h2>
 #                 <p>Hi {name or 'there'},</p>
-#                 <p>Thank you for signing up for MediCycle — your automated medication refill platform.</p>
+#                 <p>Thank you for signing up for MediCycle -- your automated medication refill platform.</p>
 #                 <p>To complete your registration, please verify your email address using the code below:</p>
                 
 #                 <div class="otp-code">
@@ -126,14 +126,14 @@
 #                 </div>
                 
 #                 <div class="warning">
-#                     ⚠️ <strong>Security Notice:</strong> Never share this code with anyone. MediCycle will never ask for this code outside of this verification process.
+#                     [!] <strong>Security Notice:</strong> Never share this code with anyone. MediCycle will never ask for this code outside of this verification process.
 #                 </div>
                 
 #                 <p style="margin-top: 24px;">If you didn't create this account, please ignore this email.</p>
 #                 <p>Need help? <a href="mailto:support@medicycle.com" style="color: #0e6e4a;">Contact Support</a></p>
 #             </div>
 #             <div class="footer">
-#                 <p>MediCycle — Making medication management effortless.</p>
+#                 <p>MediCycle -- Making medication management effortless.</p>
 #                 <p>&copy; 2024 MediCycle. All rights reserved.</p>
 #             </div>
 #         </div>
@@ -142,7 +142,7 @@
 #     """
     
 #     message = MessageSchema(
-#         subject="🔐 Verify Your MediCycle Account",
+#         subject="[LOCK] Verify Your MediCycle Account",
 #         recipients=[email],
 #         body=html_content,
 #         subtype="html"
@@ -150,13 +150,13 @@
     
 #     fm = FastMail(conf)
 #     await fm.send_message(message)
-#     print(f"✅ OTP email sent to {email}")
+#     print(f"[OK] OTP email sent to {email}")
 
 # async def send_test_email(email: str):
 #     """Send a test email to verify configuration"""
 #     html_content = """
 #     <h2>Test Email from MediCycle</h2>
-#     <p>If you're reading this, your email configuration is working correctly! ✅</p>
+#     <p>If you're reading this, your email configuration is working correctly! [OK]</p>
 #     """
     
 #     message = MessageSchema(

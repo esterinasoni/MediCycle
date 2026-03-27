@@ -43,8 +43,13 @@ MediCycle acts as a **Clinical Refill Intelligence System** that proactively man
 
 ##  How It Works (System Flow)
 
-1. Patient uploads prescription
-2. System validates and stores medication data
+1. Patient manually enters prescription details into the system, including:
+   - Medication name
+   - Dosage and frequency
+   - Total quantity dispensed
+   - Last refill date
+
+2. System validates the input data and securely stores it in the database
 3. Daily engine calculates **Days Left**
 4. Notifications triggered based on thresholds:
 
@@ -149,14 +154,14 @@ This feature directly addresses high-risk scenarios for:
 * **Phylis** – Software Developer / Cybersecurity
 
 
-## Current Status
+## Features Developed
 
-We are currently in the **MVP Build Phase**, focusing on:
+The MediCycle MVP has been successfully developed, covering the core components of the refill automation workflow:
 
-* Implementing notification logic
-* Building refill tracking engine
-* Integrating payment workflows
-* Designing caregiver escalation system
+- Refill tracking engine for automated medication depletion calculation  
+- Notification system for 5-day alerts and critical escalation  
+- Integrated payment workflow for seamless refill processing  
+- Caregiver escalation system for high-risk patient scenarios 
 
 ## Local Run
 

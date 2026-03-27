@@ -13,6 +13,7 @@ from app.models.user import User
 from app.routes.auth import get_current_user
 from app.services.interswitch import (
     charge_patient,
+    get_access_token,
     mock_charge_success,
     tokenize_card,
     verify_transaction,
@@ -52,6 +53,20 @@ def public_payment_config():
         "pay_item_id": INTERSWITCH_PAYMENT_ITEM_ID,
         "mode": "TEST" if INTERSWITCH_ENV.lower() == "sandbox" else "LIVE",
         "mock_payments": USE_MOCK,
+    }
+
+
+@router.get("/test-config")
+def test_payment_config():
+    access_token = get_access_token()
+
+    return {
+        "merchant_code_present": bool(INTERSWITCH_MERCHANT_CODE),
+        "pay_item_id_present": bool(INTERSWITCH_PAYMENT_ITEM_ID),
+        "client_id_present": bool(os.getenv("INTERSWITCH_CLIENT_ID")),
+        "secret_key_present": bool(os.getenv("INTERSWITCH_SECRET_KEY")),
+        "environment": INTERSWITCH_ENV,
+        "oauth_token_ok": bool(access_token),
     }
 
 

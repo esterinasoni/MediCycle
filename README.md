@@ -158,3 +158,15 @@ We are currently in the **MVP Build Phase**, focusing on:
 * Integrating payment workflows
 * Designing caregiver escalation system
 
+## Future Scope (Post-MVP)
+
+To keep the MVP focused, several features are planned for future development:
+
+- **Prescription Digitization (OCR):** Reduce manual input and improve data accuracy  
+- **Real-Time Pharmacy Stock Integration:** Ensure medication availability before refill  
+- **Adherence Analytics:** Improve long-term medication adherence  
+- **Insurance Integration:** Reduce financial barriers to access  
+- **Caregiver Dashboard:** Enable remote patient support  
+- **Offline Access (USSD/SMS):** Support users without smartphones  
+- **Predictive Risk Modeling:** Identify patients at risk of missing refills early
+
